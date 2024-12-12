@@ -1,5 +1,17 @@
+dtcm_loc equ 0x00800000
+
 arm9_entry:
 	.msg	'>> ENTER ARM9'
+
+	; Normalized initialization (fix discrepancies in emulator)
+	ldr	r0, =0x027FFE24
+	ldr	r1, =arm9_entry2
+	str	r1, [r0]
+	swi	0x00000 ; SoftReset
+arm9_entry2:
+	ldr	r0, =(dtcm_loc OR 0xA)
+	mov	p15,0,c9,c1,0, r0 ; DTCM
+	; End normalized initialization
 
 	ldr	r0, =0x027FFD9C ; Debug Vector
 	ldr	r1, =arm9_debug_handle
@@ -10,18 +22,11 @@ arm9_entry:
 	orr	r0, 0x1
 	mov	p15,0,c1,c0,0, r0
 
-	; TODO: set DTCM location
 	; TODO: set protection unit regions
-	; TODO: move stack pointer (r13)
 	; TODO: enable data / instruction cache?
 
 	mov	r10, 0x04000000 ; I/O start (constant!)
 	ldr	r11, =0x04001000 ; DISPCNT B (constant!)
-
-	mov	r9, p15,0,c9,c1,0 ; DTCM
-	mov	r9, r9, LSR#12 ; remove size
-	mov	r9, r9, LSL#12
-	add	r9, r9, 0x4000 ; top of DTCM
 
 	ldr	r0, =0x54DF480B ; palette colors
 	ldr	r1, =0x05000400 ; palette address
@@ -47,8 +52,9 @@ arm9_entry:
 		db	'hello :3',10,10,0
 		.align	4
 
+	ldr	r0, =(dtcm_loc + 0x3FFC) ; IRQ vector
 	ldr	r1, =arm9_intr_handle
-	str	r1, [r9, -4] ; IRQ vector
+	str	r1, [r0]
 
 	mov	r0, 0x8400 ; enable IPC Recv IRQ
 	str	r0, [r10, 0x184] ; IPCFIFOCNT

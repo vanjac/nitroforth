@@ -1,7 +1,8 @@
 00000000 - 00008000 : Instruction TCM
 00008000 - 02000000 : Instruction TCM mirrors (configurable)
 
-0xxxx000 - 0xxxx000 : Data TCM (16KB) (moveable, default 027C0000)
+0xxxx000 - 0xxxx000 : Data TCM (16KB) (moveable, default 00800000)
+	+3EC0 : Default stack top
 	+3FF8 : BIOS IRQ acknowledge
 	+3FFC : IRQ handler vector
 
