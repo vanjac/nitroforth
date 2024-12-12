@@ -1,0 +1,37 @@
+00000000 - 00008000 : Instruction TCM
+00008000 - 02000000 : Instruction TCM mirrors (configurable)
+
+0xxxx000 - 0xxxx000 : Data TCM (16KB) (moveable, default 027C0000)
+	+3FF8 : BIOS IRQ acknowledge
+	+3FFC : IRQ handler vector
+
+02000000 - 02400000 : Main RAM
+02400000 - 03000000 : Main RAM mirrors
+	027FF800 - 027FF860 : BIOS Boot Info
+	027FF860 - 027FF8CB : Firmware Boot Info
+	027FFC00 - 027FFC40 : Cartridge Info
+	027FFC40 - 027FFC80 : Download Play Info
+	027FFC80 - 027FFCF0 : User Settings
+	027FFD00 - 027FFD9C : Debug Stack
+	027FFD9C            : Debug Vector
+	027FFE00 - 027FFF70 : Cartridge Header
+	027FFFFE            : Main Memory Control register
+03000000 - 03008000 : Shared WRAM (allocated)
+03008000 - 04000000 : Shared WRAM mirrors
+04000000 - 05000000 : ARM9 I/O Ports
+
+05000000 - 05000400 : Engine A Palette
+05000400 - 05000800 : Engine B Palette
+06000000 - 06080000 : Engine A BG VRAM (allocated)
+06200000 - 06220000 : Engine B BG VRAM (allocated)
+06400000 - 06440000 : Engine A OBJ VRAM (allocated)
+06600000 - 06620000 : Engine B OBJ VRAM (allocated)
+06800000 - 068A4000 : LCDC VRAM (allocated)
+07000000 - 07000400 : Engine A OAM
+07000400 - 07000800 : Engine B OAM
+
+08000000 - 0A000000 : GBA Slot ROM
+0A000000 - 0A010000 : GBA Slot RAM
+0A010000 - 0B000000 : GBA Slot RAM mirrors
+
+FFFF0000 - FFFF8000 : ARM9 BIOS

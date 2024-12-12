@@ -11,6 +11,10 @@ arm9_entry:
 	; ldr	r0, =0x0300000A
 	; mov	p15,0,c9,c1,0, r0
 
+	; TODO: enable protection unit
+	; TODO: enable debug vector
+	; TODO: move stack pointer (r13)
+
 	mov	r9, p15,0,c9,c1,0 ; DTCM
 	mov	r9, r9, LSR#12 ; remove size
 	mov	r9, r9, LSL#12
@@ -88,8 +92,6 @@ arm9_halt_loop:
 	bl	f_render_keyboard
 	b	@@print_fifo_loop
 
-.pool
-
 ; r0-r3 are pushed by BIOS
 arm9_intr_handle:
 	; acknowledge interrupt
@@ -114,8 +116,6 @@ f_arm9_divide_32:
 
 	ldr	r0, [r10, 0x2A0]
 	bx	lr
-
-.pool
 
 ; r0: ADC X/Y values
 ; ---
