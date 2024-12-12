@@ -2,7 +2,9 @@
 00008000 - 02000000 : Instruction TCM mirrors (configurable)
 
 0xxxx000 - 0xxxx000 : Data TCM (16KB) (moveable, default 00800000)
-	+3EC0 : Default stack top
+	+3EC0 : Default SP
+	+3FA0 : Default IRQ SP
+	+3FC0 : Default SVC SP
 	+3FF8 : BIOS IRQ acknowledge
 	+3FFC : IRQ handler vector
 
