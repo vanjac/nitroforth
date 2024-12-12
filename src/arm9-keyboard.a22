@@ -1,0 +1,60 @@
+f_render_keyboard:
+	push	r4
+
+	ldr	r2, =0x06202380 ; BG char position
+	mov	r0, 0           ; key index
+	mov	r1, (keyboard_end - keyboard)
+	ldr	r4, [keyboard_ptr]
+@@draw_loop:
+	ldrb	r3, [r4, r0]
+	strh	r3, [r2]
+
+	add	r0, r0, 1
+	add	r2, r2, 4
+	tst	r0, 0xF
+	addeq	r2, r2, 0x42 ; stagger keys
+	cmp	r0, r1
+	blo	@@draw_loop
+
+	pop	r4
+	bx	lr
+
+; r0: X coord
+; r1: Y coord
+; ---
+; r0: key
+f_get_key:
+	add	r0, r0, 4
+	subs	r1, r1, 0x6C
+	blt	@@no_key
+	mov	r1, r1, LSR#4
+	cmp	r1, 4
+	bge	@@space
+	sub	r0, r0, r1, LSL#3 ; stagger keys
+	mov	r0, r0, LSR#4
+	add	r0, r1, LSL#4
+	ldr	r1, [keyboard_ptr]
+	ldrb	r0, [r1, r0]
+	bx	lr
+@@no_key:
+	mov	r0, 0
+	bx	lr
+@@space:
+	mov	r0, 32
+	bx	lr
+
+keyboard_ptr:
+	dd	keyboard
+keyboard:
+	db	0,"`1234567890-=",8,8
+	db	0,0,"qwertyuiop[]\",0
+	db	0,0,"asdfghjkl;'",10,10,0
+	db	14,14,"zxcvbnm,./",0,0,0,0
+keyboard_end:
+keyboard_shifted:
+	db	0,'~!@#$%^&*()_+',8,8
+	db	0,0,'QWERTYUIOP{}|',0
+	db	0,0,'ASDFGHJKL:"',10,10,0
+	db	15,15,'ZXCVBNM<>?',0,0,0,0
+
+.pool

@@ -1,0 +1,119 @@
+arm7_entry:
+	.msg	'>> ENTER ARM7'
+	.brk
+
+	mov	r10, 0x04000000 ; I/O start
+
+	ldr	r1, =0x807F
+	str	r1, [r10, 0x500] ; SOUNDCNT
+
+	; beep sequence
+	ldr	r1, =0xE3200020
+	str	r1, [r10, 0x480] ; SOUND8CNT
+
+	ldr	r1, =0xFFFFDAD0
+	str	r1, [r10, 0x488] ; SOUND8TMR
+	ldr	r0, =0x100000
+	swi	0x30000 ; WaitByLoop
+	ldr	r1, =0xFFFFE736
+	str	r1, [r10, 0x488] ; SOUND8TMR
+	ldr	r0, =0x100000
+	swi	0x30000 ; WaitByLoop
+	ldr	r1, =0xFFFFED68
+	str	r1, [r10, 0x488] ; SOUND8TMR
+	ldr	r0, =0x100000
+	swi	0x30000 ; WaitByLoop
+
+	; turn off sound
+	mov	r1, 0
+	str	r1, [r10, 0x480] ; SOUND8CNT
+
+	mov	r0, 0x8000 ; enable FIFO
+	str	r0, [r10, 0x184] ; IPCFIFOCNT
+
+	mov	r1, 0x8 ; V-Blank IRQ
+	strh	r1, [r10, 0x4]
+
+	mov	r1, 0x1 ; enable V-Blank interrupt
+	str	r1, [r10, 0x210] ; IE
+
+	mvn	r6, 0 ; prev RCNT/EXTKEYIN
+
+arm7_halt_loop:
+	swi	0x60000 ; halt
+
+	; acknowledge interrupt
+	ldr	r1, [r10, 0x214] ; IF
+	str	r1, [r10, 0x214] ; IF
+
+	ldr	r1, [r10, 0x134] ; RCNT/EXTKEYIN
+	tst	r6, 0x400000 ; Pen WAS down
+	mov	r6, r1       ; Update prev values
+	beq	arm7_halt_loop ; was pressed
+	tst	r6, 0x400000 ; Pen IS down
+	bne	arm7_halt_loop ; not pressed
+
+	mov	r7, 0 ; read data
+	; Setup the SPI bus for TSC
+	add	r0, r10, 0x1C0 ; SPICNT
+	ldr	r1, =0x8A01 ; Select TSC @2MHz, enable chipselect
+	strh	r1, [r0]
+
+	; Send control byte to get X Position
+	mov	r1, 0xD0 ; Mode 0, Differential, 12-bit, Channel 5
+	strb	r1, [r0, 2] ; SPIDATA
+	bl	f_read_tsc_12bit
+	mov	r4, r1
+
+	; Send control byte to get Y Position
+	mov	r1, 0x90 ; Mode 0, Differential, 12-bit, Channel 1
+	strb	r1, [r0, 2] ; SPIDATA
+	bl	f_read_tsc_12bit
+	orr	r1, r1, r4, LSL#16
+
+	; TODO: filter out noise! see GBATEK "Touchscreen Notes"
+
+	; Send IPC
+	str	r1, [r10, 0x188] ; IPCFIFOSEND
+
+	; Disable Chipselect Hold
+	ldr	r1, =0x8201
+	strh	r1, [r0]
+	strb	r7, [r0, 2]
+	; Disable SPI bus
+	mov	r1, 0
+	strh	r1, [r0]
+
+	b	arm7_halt_loop
+
+; r0: SPICNT address
+f_spi_busy_wait:
+	ldrh	r1, [r0]
+	tst	r1, 0x80
+	bne	f_spi_busy_wait
+	bx	lr
+
+; r0: SPICNT address
+; ---
+; r1: value
+f_read_tsc_12bit:
+	push	r4-r6,lr
+	mov	r6, 0 ; zero
+
+	bl	f_spi_busy_wait
+	; Receive byte 1
+	strb	r6, [r0, 2]
+	bl	f_spi_busy_wait
+	ldrb	r4, [r0, 2]
+	; Receive byte 2
+	strb	r6, [r0, 2]
+	bl	f_spi_busy_wait
+	ldrb	r5, [r0, 2]
+
+	mov	r1, r4, LSL#5
+	orr	r1, r5, LSR#3
+
+	pop	r4-r6,lr
+	bx	lr
+
+.pool

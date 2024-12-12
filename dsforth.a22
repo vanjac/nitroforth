@@ -1,0 +1,43 @@
+; https://problemkaputt.de/gbatek-arm-pseudo-instructions-and-directives.htm
+; r0-r3: function scratch registers
+
+.nds
+.fix
+.strict
+
+arm9_dest equ 0x02000000
+arm7_dest equ 0x037F8000 ; shared WRAM mirror (allocated to ARM7 by default)
+
+org 0
+
+.include src\header.a22
+
+arm9_src:
+org arm9_dest
+arm9_start:
+	defs	0x800 ; secure area key1
+
+.include src\arm9-kernel.a22
+.include src\arm9-termout.a22
+.include src\arm9-keyboard.a22
+.include src\font.a22
+
+arm9_end:
+org (arm9_end - arm9_start + arm9_src) ; move origin back to ROM space
+
+; move after secure area
+.if ($ < 0x8000)
+	defs	(0x8000 - $)
+.endif
+
+arm7_src:
+org arm7_dest
+arm7_start:
+
+.include src\arm7-kernel.a22
+
+arm7_end:
+org (arm7_end - arm7_start + arm7_src) ; move origin back to ROM space
+
+rom_end:
+.end

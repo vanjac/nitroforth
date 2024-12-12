@@ -1,0 +1,162 @@
+arm9_entry:
+	.msg	'>> ENTER ARM9'
+
+	mov	r10, 0x04000000 ; I/O start (constant!)
+	ldr	r11, =0x04001000 ; DISPCNT B (constant!)
+
+	; setup DTCM
+	; TODO
+	; base: 0x03000000
+	; size: 16kB
+	; ldr	r0, =0x0300000A
+	; mov	p15,0,c9,c1,0, r0
+
+	mov	r9, p15,0,c9,c1,0 ; DTCM
+	mov	r9, r9, LSR#12 ; remove size
+	mov	r9, r9, LSL#12
+	add	r9, r9, 0x4000 ; top of DTCM
+
+	ldr	r0, =0x54DF480B ; palette colors
+	ldr	r1, =0x05000400 ; palette address
+	str	r0, [r1]
+	ldr	r0, =0x0EFF0000
+	str	r0, [r1, 0x200]
+
+	ldr	r1, =0x00011100 ; set Engine B to mode 1 (graphics display). enable BG0+OBJ
+	str	r1, [r11]
+
+	mov	r1, 0x0400
+	strh	r1, [r11, 8] ; BG0CNT
+
+	mov	r1, 0x84 ; map VRAM C as Engine B BG-VRAM
+	strb	r1, [r10, 0x242]
+	mov	r1, 0x84 ; map VRAM D as Engine B OBJ-VRAM
+	strb	r1, [r10, 0x243]
+
+	bl	f_init_term_out
+	bl	f_render_keyboard
+
+	bl	f_print_string_inline
+		db	'hello :3',10,10,0
+		.align	4
+
+	ldr	r1, =arm9_intr_handle
+	str	r1, [r9, -4] ; IRQ vector
+
+	mov	r0, 0x8400 ; enable IPC Recv IRQ
+	str	r0, [r10, 0x184] ; IPCFIFOCNT
+
+	mov	r1, 0x40000 ; enable IPC Recv interrupt
+	str	r1, [r10, 0x210] ; IE
+
+	mvn	r1, 0
+	str	r1, [r10, 0x214] ; IF
+	mov	r1, 1
+	str	r1, [r10, 0x208] ; IME
+
+	; cpu interrupt enable (clear I-flag)
+	mov  r0, cpsr
+	bic  r0, r0, 0x80
+	mov  cpsr, r0
+
+arm9_halt_loop:
+	swi	0x60000 ; halt
+
+@@print_fifo_loop:
+	ldr	r0, [r10, 0x184] ; IPCFIFOCNT
+	tst	r0, 0x100 ; FIFO empty
+	bne	arm9_halt_loop
+
+	mov	r0, 0x04100000
+	ldr	r0, [r0]
+
+	bl	f_calc_touchscreen_pos
+	bl	f_get_key
+	cmp	r0, 14
+	ldreq	r1, =keyboard_shifted
+	beq	@@keyboard_shift
+	cmp	r0, 15
+	ldreq	r1, =keyboard
+	beq	@@keyboard_shift
+	cmp	r0, 0
+	blne	f_print_char
+
+	b	@@print_fifo_loop
+
+@@keyboard_shift:
+	str	r1, [keyboard_ptr]
+	bl	f_render_keyboard
+	b	@@print_fifo_loop
+
+.pool
+
+; r0-r3 are pushed by BIOS
+arm9_intr_handle:
+	; acknowledge interrupt
+	ldr	r1, [r10, 0x214] ; IF
+	str	r1, [r10, 0x214] ; IF
+
+	bx	lr
+
+; r0: numerator
+; r1: denominator
+; ---
+; r0: quotient
+f_arm9_divide_32:
+	mov	r2, 0 ; mode 0 (32-bit)
+	str	r2, [r10, 0x280]
+	str	r0, [r10, 0x290]
+	str	r1, [r10, 0x298]
+@@busy_loop:
+	ldr	r2, [r10, 0x280]
+	tst	r2, 0x8000
+	bne	@@busy_loop
+
+	ldr	r0, [r10, 0x2A0]
+	bx	lr
+
+.pool
+
+; r0: ADC X/Y values
+; ---
+; r0: X coord
+; r1: Y coord
+f_calc_touchscreen_pos:
+	push	r4-r9,lr
+
+	mov	r4, r0, LSL#16
+	mov	r4, r4, LSR#16 ; adc.y
+	mov	r0, r0, LSR#16 ; adc.x
+	ldr	r8, =0x027FFCD8 ; touch screen calibration data addr
+	; calc X coord
+	ldrh	r5, [r8, 0x0] ; adc.x1
+	ldrb	r6, [r8, 0x4] ; scr.x1
+	ldrh	r1, [r8, 0x6] ; adc.x2
+	ldrb	r7, [r8, 0xA] ; scr.x2
+	sub	r0, r0, r5 ; (adc.x - adc.x1)
+	sub	r7, r7, r6 ; (scr.x2 - scr.x1)
+	mul	r0, r0, r7 ; (adc.x - adc.x1) * (scr.x2 - scr.x1)
+	sub	r1, r1, r5 ; (adc.x2 - adc.x1)
+	bl	f_arm9_divide_32
+	add	r9, r0, r6
+	sub	r9, r9, 1  ; scr.x
+
+	; calc Y coord
+	ldrh	r5, [r8, 0x2] ; adc.y1
+	ldrb	r6, [r8, 0x5] ; scr.y1
+	ldrh	r1, [r8, 0x8] ; adc.y2
+	ldrb	r7, [r8, 0xB] ; scr.y2
+	sub	r0, r4, r5 ; (adc.y - adc.y1)
+	sub	r7, r7, r6 ; (scr.y2 - scr.y1)
+	mul	r0, r0, r7 ; (adc.y - adc.y1) * (scr.y2 - scr.y1)
+	sub	r1, r1, r5 ; (adc.y2 - adc.y1)
+	bl	f_arm9_divide_32
+	add	r1, r0, r6
+	sub	r1, r1, 1 ; scr.y
+
+	mov	r0, r9
+
+	pop	r4-r9,lr
+	bx	lr
+
+.pool

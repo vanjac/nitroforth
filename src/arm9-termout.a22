@@ -1,0 +1,145 @@
+cursor:
+	dd 0
+
+cursor_tile:
+	dd	0x11111111
+
+font_unpack_info:
+	dw	(font_tiles_end - font_tiles) ; size
+	db	1 ; source width
+	db	4 ; dest width
+	dd	0 ; no offset
+
+f_init_term_out:
+	; load the font
+	ldr	r0, =font_tiles
+	ldr	r1, =0x06200400
+	ldr	r2, =font_unpack_info
+	swi	0x100000 ; BitUnPack
+
+	; cursor
+	ldr	r0, =cursor_tile
+	ldr	r1, =0x06600020
+	ldr	r2, =0x1000020
+	swi	0xC0000 ; CpuFastSet
+	ldr	r0, =0x07000404 ; OAM obj 0 attr 2
+	mov	r1, 1
+	strh	r1, [r0]
+
+	bx	lr
+
+; r0: char
+f_print_char:
+	ldr	r1, [cursor]
+	cmp	r0, 0xA
+	beq	print_newline
+	mov	r3, r1, LSL#1
+	ldr	r2, =0x06202000 ; BG0 screen
+	strh	r0, [r2, r3]
+	add	r1, r1, 1
+update_cursor:
+	cmp	r1, 0x1A0
+	subge	r1, 0x20
+	str	r1, [cursor]
+
+	ldr	r0, =0x07000400 ; OAM obj 0
+	mov	r2, r1, LSR#5
+	mov	r2, r2, LSL#3
+	strh	r2, [r0]
+	mov	r2, r1, LSL#27
+	mov	r2, r2, LSR#24
+	strh	r2, [r0, 2]
+
+	bge	@@scroll
+	bx	lr
+
+@@scroll:
+	ldr	r0, =0x06202040 ; src
+	ldr	r1, =0x06202000 ; dest
+	ldr	r2, =0xC0
+	swi	0xC0000 ; CpuFastSet
+	; fill last row
+	push	r4
+	ldr	r4, =0x06202300
+	mov	r0, 0
+	mov	r1, 0
+	mov	r2, 0
+	mov	r3, 0
+	stmia	r4!, r0,r1,r2,r3
+	stmia	r4!, r0,r1,r2,r3
+	stmia	r4!, r0,r1,r2,r3
+	stmia	r4!, r0,r1,r2,r3
+	pop	r4
+	bx	lr
+
+f_print_newline:
+	ldr	r1, [cursor]
+print_newline:
+	bic	r1, r1, 0x1F
+	add	r1, r1, 0x20
+	b	update_cursor
+
+; r0: ptr
+; r1: size
+f_print_string:
+	push	r4-r5,lr
+	mov	r4, r0 ; string ptr
+	add	r5, r0, r1 ; string end
+@@loop:
+	ldrb	r0, [r4]
+	bl	f_print_char
+	add	r4, r4, 1
+	cmp	r4, r5
+	blt	@@loop
+
+	pop	r4-r5,lr
+	bx	lr
+
+; r0: ptr
+; ---
+; r0: end ptr
+f_print_string_null:
+	push	r4,lr
+	mov	r4, r0 ; string ptr
+@@loop:
+	ldrb	r0, [r4]
+	cmp	r0, 0
+	beq	@@loop_exit
+	bl	f_print_char
+	add	r4, r4, 1
+	cmp	r4, r5
+	b	@@loop
+@@loop_exit:
+	mov	r0, r4
+	pop	r4,lr
+	bx	lr
+
+f_print_string_inline:
+	mov	r0, lr
+	bl	f_print_string_null
+	bic	r0, r0, 0x3
+	add	lr, r0, 4
+	bx	lr
+
+; r0: value
+f_print_u32_hex:
+	push	r4-r5,lr
+
+	mov	r4, r0 ; value
+	mov	r5, 28 ; shift
+
+@@loop:
+	mov	r0, r4, LSR r5
+	and	r0, r0, 0xF
+	cmp	r0, 10
+	addlt	r0, r0, 0x30 ; '0'
+	addge	r0, r0, 0x37 ; 'A'
+	bl	f_print_char
+
+	subs	r5, r5, 4
+	bpl	@@loop
+
+	pop	r4-r5,lr
+	bx	lr
+
+.pool

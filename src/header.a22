@@ -1,0 +1,45 @@
+	db	'DSFORTH',0,0,0,0,0 ; title
+	db	'####'              ; game code - affects loading time in flashcarts?
+	db	0,0                 ; maker code
+	db	0                   ; unit code = NDS
+	db	0                   ; encryption seed
+	db	0                   ; device capacity = 128KB
+	db	0,0,0,0,0,0,0,0     ; reserved
+	db	0                   ; region
+	db	0                   ; rom version
+	db	0                   ; autostart off
+	dd	arm9_src
+	dd	arm9_entry
+	dd	arm9_dest
+	dd	(arm9_end - arm9_start)
+	dd	arm7_src
+	dd	arm7_entry
+	dd	arm7_dest
+	dd	(arm7_end - arm7_start)
+	dd	0,0,0,0               ; FNT / FAT
+	dd	0,0,0,0               ; overlays
+	dd	0x00586000,0x001808F8 ; romctrl default settings
+	dd	0                     ; icon/title (TODO)
+	dw	0                     ; secure area checksum (fixed by .fix)
+	dw	0x051E                ; secure area delay
+	dd	0,0                   ; autoload
+	dd	0,0                   ; secure area disable
+	dd	rom_end               ; rom size
+	dd	0x4000                ; header size
+	dd	0,0,0                 ; unknown/reserved
+	dw	0,0                   ; nand
+	defs	0x28                  ; reserved
+	; nintendo logo:
+	dd	0x51AEFF24,0x21A29A69,0x0A82843D,0xAD09E484,0x988B2411
+	dd	0x217F81C0,0x19BE52A3,0x20CE0993,0x4A4A4610,0xEC3127F8
+	dd	0x33E8C758,0xBFCEE382,0x94DFF485,0xC1094BCE,0xC08A5694
+	dd	0xFCA77213,0x734D849F,0x619ACAA3,0x27A39758,0x769803FC
+	dd	0x61C71D23,0x56AE0403,0x008438BF,0xFD0EA740,0x03FE52FF
+	dd	0xF130956F,0x85C0FB97,0x2580D660,0x03BE63A9,0xE2384E01
+	dd	0xFF34A2F9,0x44033EBB,0xCB900078,0x943A1188,0x637CC065
+	dd	0xAF3CF087,0x8BE425D6,0x72AC0A38,0x07F8D421
+	dw	0xCF56              ; nintendo logo checksum
+	dw	0                   ; header checksum (fixed by .fix)
+	dd	0,0,0,0             ; debug
+
+	defs	(0x4000 - $) ; start of secure area
