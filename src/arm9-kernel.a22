@@ -5,18 +5,18 @@ arm9_entry:
 	ldr	r1, =arm9_debug_handle
 	str	r1, [r0]
 
+	; Enable Protection Unit
+	mov	r0, p15,0,c1,c0,0
+	orr	r0, 0x1
+	mov	p15,0,c1,c0,0, r0
+
+	; TODO: set DTCM location
+	; TODO: set protection unit regions
+	; TODO: move stack pointer (r13)
+	; TODO: enable data / instruction cache?
+
 	mov	r10, 0x04000000 ; I/O start (constant!)
 	ldr	r11, =0x04001000 ; DISPCNT B (constant!)
-
-	; setup DTCM
-	; TODO
-	; base: 0x03000000
-	; size: 16kB
-	; ldr	r0, =0x0300000A
-	; mov	p15,0,c9,c1,0, r0
-
-	; TODO: enable protection unit
-	; TODO: move stack pointer (r13)
 
 	mov	r9, p15,0,c9,c1,0 ; DTCM
 	mov	r9, r9, LSR#12 ; remove size
