@@ -1,6 +1,10 @@
 arm9_entry:
 	.msg	'>> ENTER ARM9'
 
+	ldr	r0, =0x027FFD9C ; Debug Vector
+	ldr	r1, =arm9_debug_handle
+	str	r1, [r0]
+
 	mov	r10, 0x04000000 ; I/O start (constant!)
 	ldr	r11, =0x04001000 ; DISPCNT B (constant!)
 
@@ -12,7 +16,6 @@ arm9_entry:
 	; mov	p15,0,c9,c1,0, r0
 
 	; TODO: enable protection unit
-	; TODO: enable debug vector
 	; TODO: move stack pointer (r13)
 
 	mov	r9, p15,0,c9,c1,0 ; DTCM
@@ -158,5 +161,24 @@ f_calc_touchscreen_pos:
 
 	pop	r4-r9,lr
 	bx	lr
+
+arm9_debug_handle:
+	.brk
+	mov	r10, 0x04000000
+
+	; Disable interrupts
+	mov	r1, 0
+	str	r1, [r10, 0x210] ; IE
+	str	r1, [r10, 0x208] ; IME
+
+	bl	f_print_string_inline
+		db	10,'CRASH! at ',0
+		.align	4
+
+	ldr	r0, =0x027FFD98
+	ldr	r0, [r0]
+	bl	f_print_u32_hex
+
+	swi	0x60000 ; halt
 
 .pool
