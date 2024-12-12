@@ -17,13 +17,16 @@ arm9_entry2:
 	ldr	r1, =arm9_debug_handle
 	str	r1, [r0]
 
-	; Enable Protection Unit
-	mov	r0, p15,0,c1,c0,0
-	orr	r0, 0x1
+	mov	r0, p15,0,c1,c0,0 ; CP15 Control Register
+	orr	r0, 0x1           ; Enable Protection Unit
 	mov	p15,0,c1,c0,0, r0
 
-	; TODO: set protection unit regions
-	; TODO: enable data / instruction cache?
+	; Disable PU region 2
+	; TODO: set other PU regions
+	mov	r0, 0 ; disabled
+	mov	p15,0,c6,c2,0, r0
+
+	; TODO: enable data / instruction cache
 
 	mov	r10, 0x04000000 ; I/O start (constant!)
 	ldr	r11, =0x04001000 ; DISPCNT B (constant!)
