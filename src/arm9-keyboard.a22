@@ -31,7 +31,7 @@ f_get_key:
 	cmp	r1, 4
 	bge	@@space
 	sub	r0, r0, r1, LSL#3 ; stagger keys
-	mov	r0, r0, LSR#4
+	mov	r0, r0, ASR#4
 	add	r0, r1, LSL#4
 	ldr	r1, [keyboard_ptr]
 	ldrb	r0, [r1, r0]
@@ -48,6 +48,7 @@ f_get_key:
 f_await_keypress:
 	push	lr
 
+@@await_loop:
 	ldr	r0, [r10, 0x184] ; IPCFIFOCNT
 	tst	r0, 0x100 ; FIFO empty
 
@@ -65,7 +66,7 @@ f_await_keypress:
 	addeq	r1, =keyboard
 	beq	@@keyboard_shift
 	cmp	r0, 0
-	beq	f_await_keypress ; try again
+	beq	@@await_loop
 
 	pop	lr
 	bx	lr
@@ -73,20 +74,20 @@ f_await_keypress:
 @@keyboard_shift:
 	str	r1, [keyboard_ptr]
 	bl	f_render_keyboard
-	b	f_await_keypress ; try again
+	b	@@await_loop
 
 keyboard_ptr:
 	dd	keyboard
 keyboard:
 	db	0,"`1234567890-=",8,8
 	db	0,0,"qwertyuiop[]\",0
-	db	0,0,"asdfghjkl;'",10,10,0
+	db	0,0,"asdfghjkl;'",10,0,0
 	db	14,14,"zxcvbnm,./",0,0,0,0
 keyboard_end:
 keyboard_shifted:
 	db	0,'~!@#$%^&*()_+',8,8
 	db	0,0,'QWERTYUIOP{}|',0
-	db	0,0,'ASDFGHJKL:"',10,10,0
+	db	0,0,'ASDFGHJKL:"',10,0,0
 	db	15,15,'ZXCVBNM<>?',0,0,0,0
 
 .pool
