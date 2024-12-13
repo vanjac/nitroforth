@@ -74,34 +74,10 @@ arm9_entry2:
 	bic  r0, r0, 0x80
 	mov  cpsr, r0
 
-arm9_halt_loop:
-	swi	0x60000 ; halt
-
-@@print_fifo_loop:
-	ldr	r0, [r10, 0x184] ; IPCFIFOCNT
-	tst	r0, 0x100 ; FIFO empty
-	bne	arm9_halt_loop
-
-	mov	r0, 0x04100000
-	ldr	r0, [r0]
-
-	bl	f_calc_touchscreen_pos
-	bl	f_get_key
-	cmp	r0, 14
-	addeq	r1, =keyboard_shifted
-	beq	@@keyboard_shift
-	cmp	r0, 15
-	addeq	r1, =keyboard
-	beq	@@keyboard_shift
-	cmp	r0, 0
+arm9_echo_loop:
+	bl	f_await_keypress
 	blne	f_print_char
-
-	b	@@print_fifo_loop
-
-@@keyboard_shift:
-	str	r1, [keyboard_ptr]
-	bl	f_render_keyboard
-	b	@@print_fifo_loop
+	b	arm9_echo_loop
 
 ; r0-r3 are pushed by BIOS
 arm9_intr_handle:
