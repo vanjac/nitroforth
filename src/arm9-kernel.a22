@@ -74,10 +74,7 @@ arm9_entry2:
 	bic  r0, r0, 0x80
 	mov  cpsr, r0
 
-arm9_echo_loop:
-	bl	f_await_keypress
-	blne	f_print_char
-	b	arm9_echo_loop
+	b	start_forth
 
 ; r0-r3 are pushed by BIOS
 arm9_intr_handle:

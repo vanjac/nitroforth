@@ -1,0 +1,250 @@
+data_stack_top = (dtcm_loc + 0x2000)
+
+; dsForth is subroutine-threaded
+
+; r0:	Scratch
+; r1:	Scratch
+; r2:	Scratch
+; r3:	Scratch
+; r4:	Callee save
+; r5:	Callee save
+; r6:	Callee save
+; r7:	Callee save
+; r8:	Data Stack Pointer
+; r9:	Top Data Stack Value
+; r10:	Constant 0x04000000
+; r11:	?
+; r12:	Scratch(?)
+; r13:	Return Stack Pointer
+; r14:	Link Register
+; r15:	Program Counter
+
+start_forth:
+	ldr	r8, =data_stack_top ; Set the data stack pointer
+
+@@echo_loop:
+	bl	WORD
+	bl	TYPE
+	bl	LIT
+	dd	10 ; newline
+	bl	EMIT
+	b	@@echo_loop
+
+	bx	lr
+
+.pool
+
+; Dictionary:
+
+
+name_DROP:
+	dd	0 ; link
+	db	4,'drop' ; name
+	.align	4
+DROP:
+	ldmfd	[r8]!, r9
+	bx	lr
+
+name_SWAP:
+	dd	name_DROP ; link
+	db	4,'drop' ; name
+	.align	4
+SWAP:
+	swp	r9, r9, [r8]
+	bx	lr
+
+name_DUP:
+	dd	name_SWAP ; link
+	db	3,'dup' ; name
+	.align	4
+DUP:
+	stmfd	[r8]!, r9
+	bx	lr
+
+name_OVER:
+	dd	name_DUP ; link
+	db	4,'over' ; name
+	.align	4
+OVER:
+	stmfd	[r8]!, r9
+	ldr	r9, [r8, 4]
+	bx	lr
+
+name_EXIT:
+	dd	name_OVER ; link
+	db	4,'exit' ; name
+	.align	4
+EXIT:
+	pop	lr
+	bx	lr
+
+name_LIT:
+	dd	name_EXIT ; link
+	db	3,'lit' ; name
+	.align	4
+LIT:
+	stmfd	[r8]!, r9
+	ldmia	[lr]!, r9
+	bx	lr
+
+name_store:
+	dd	name_LIT ; link
+	db	1,'!' ; name
+	.align	4
+store:
+	ldmfd	[r8]!, r0 ; data to store
+	str	r0, [r9]
+	ldmfd	[r8]!, r9
+	bx	lr
+
+name_fetch:
+	dd	name_store ; link
+	db	1,'@' ; name
+	.align	4
+fetch:
+	ldr	r9, [r9]
+	bx	lr
+
+name_STATE:
+	dd	name_fetch ; link
+	db	5,'state' ; name
+	.align	4
+STATE:
+	stmfd	[r8]!, r9
+	add	r9, =var_STATE
+	bx	lr
+var_STATE:
+	dd	0
+
+name_HERE:
+	dd	name_STATE ; link
+	db	4,'here' ; name
+	.align	4
+HERE:
+	stmfd	[r8]!, r9
+	add	r9, =var_HERE
+	bx	lr
+var_HERE:
+	dd	0 ; TODO
+
+name_LATEST:
+	dd	name_HERE ; link
+	db	6,'latest' ; name
+	.align	4
+LATEST:
+	stmfd	[r8]!, r9
+	add	r9, =var_LATEST
+	bx	lr
+var_LATEST:
+	dd	0 ; TODO
+
+name_rpush:
+	dd	name_LATEST ; link
+	db	2,'>r' ; name
+	.align	4
+rpush:
+	push	r9
+	ldmfd	[r8]!, r9
+	bx	lr
+
+name_rpop:
+	dd	name_rpush ; link
+	db	2,'r>' ; name
+	.align	4
+rpop:
+	stmfd	[r8]!, r9
+	pop	r9
+	bx	lr
+
+name_KEY:
+	dd	name_rpop ; link
+	db	3,'KEY' ; name
+	.align	4
+KEY:
+	; TODO: add input buffer
+	push	lr
+	bl	f_key
+	stmfd	[r8]!, r9
+	mov	r9, r0
+	pop	lr
+	bx	lr
+
+f_key:
+	push	r4,lr
+	bl	f_await_keypress
+	mov	r4, r0
+	bl	f_print_char
+	mov	r0, r4
+	pop	r4,lr
+	bx	lr
+	
+
+name_EMIT:
+	dd	name_KEY ; link
+	db	4,'EMIT' ; name
+	.align	4
+EMIT:
+	push	lr
+	mov	r0, r9
+	bl	f_print_char
+	ldmfd	[r8]!, r9
+	pop	lr
+	bx	lr
+
+name_WORD:
+	dd	name_EMIT ; link
+	db	4,'WORD' ; name
+	.align	4
+WORD:
+	push	r4,lr
+
+@@find_non_blank:
+	bl	f_key
+	cmp	r0, 32 ; space
+	cmpne	r0, 10 ; newline
+	beq	@@find_non_blank ; keep searching
+
+	add	r4, =@@word_buf
+@@append_loop:
+	strb	r0, [r4]
+	add	r4, r4, 1
+	bl	f_key
+	cmp	r0, 32 ; space
+	cmpne	r0, 10 ; newline
+	bne	@@append_loop ; keep appending
+
+	add	r0, =@@word_buf
+	stmfd	[r8]!, r0,r9
+	sub	r9, r4, r0 ; word length
+
+	pop	r4,lr
+	bx	lr
+
+@@word_buf:
+	defs	32
+
+; print a string
+name_TYPE:
+	dd	name_WORD ; link
+	db	4,'TYPE' ; name
+	.align	4
+TYPE:
+	push	lr
+	mov	r1, r9
+	ldmfd	[r8]!, r0,r9
+	bl	f_print_string
+	pop	lr
+	bx	lr
+
+; print number in hex
+name_Xdot:
+	dd	name_TYPE ; link
+	db	2,'X.' ; name
+	.align	4
+Xdot:
+	push	lr
+	mov	r0, r9
+	bl	f_print_u32_hex
+	ldmfd	[r8]!, r9
+	pop	lr
+	bx	lr
