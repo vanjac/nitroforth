@@ -1,4 +1,4 @@
-term_bg_screen equ 0x06202000 ; BG0 screen
+term_bg_screen = 0x06202000 ; BG0 screen
 
 cursor:
 	dd 0
@@ -14,13 +14,13 @@ font_unpack_info:
 
 f_init_term_out:
 	; load the font
-	ldr	r0, =font_tiles
+	add	r0, =font_tiles
 	ldr	r1, =0x06200400
-	ldr	r2, =font_unpack_info
+	add	r2, =font_unpack_info
 	swi	0x100000 ; BitUnPack
 
 	; cursor
-	ldr	r0, =cursor_tile
+	add	r0, =cursor_tile
 	ldr	r1, =0x06600020
 	ldr	r2, =0x1000020
 	swi	0xC0000 ; CpuFastSet

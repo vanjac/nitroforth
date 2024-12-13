@@ -1,11 +1,11 @@
-dtcm_loc equ 0x00800000
+dtcm_loc = 0x00800000
 
 arm9_entry:
 	.msg	'>> ENTER ARM9'
 
 	; Normalized initialization (fix discrepancies in emulator)
 	ldr	r0, =0x027FFE24
-	ldr	r1, =arm9_entry2
+	add	r1, =arm9_entry2
 	str	r1, [r0]
 	swi	0x00000 ; SoftReset
 arm9_entry2:
@@ -14,7 +14,7 @@ arm9_entry2:
 	; End normalized initialization
 
 	ldr	r0, =0x027FFD9C ; Debug Vector
-	ldr	r1, =arm9_debug_handle
+	add	r1, =arm9_debug_handle
 	str	r1, [r0]
 
 	mov	r0, p15,0,c1,c0,0 ; CP15 Control Register
@@ -29,7 +29,6 @@ arm9_entry2:
 	; TODO: enable data / instruction cache
 
 	mov	r10, 0x04000000 ; I/O start (constant!)
-	ldr	r11, =0x04001000 ; DISPCNT B (constant!)
 
 	ldr	r0, =0x54DF480B ; palette colors
 	ldr	r1, =0x05000400 ; palette address
@@ -37,9 +36,9 @@ arm9_entry2:
 	ldr	r0, =0x0EFF0000
 	str	r0, [r1, 0x200]
 
+	ldr	r11, =0x04001000 ; DISPCNT B
 	ldr	r1, =0x00011100 ; set Engine B to mode 1 (graphics display). enable BG0+OBJ
 	str	r1, [r11]
-
 	mov	r1, 0x0400
 	strh	r1, [r11, 8] ; BG0CNT
 
@@ -56,7 +55,7 @@ arm9_entry2:
 		.align	4
 
 	ldr	r0, =(dtcm_loc + 0x3FFC) ; IRQ vector
-	ldr	r1, =arm9_intr_handle
+	add	r1, =arm9_intr_handle
 	str	r1, [r0]
 
 	mov	r0, 0x8400 ; enable IPC Recv IRQ
@@ -89,10 +88,10 @@ arm9_halt_loop:
 	bl	f_calc_touchscreen_pos
 	bl	f_get_key
 	cmp	r0, 14
-	ldreq	r1, =keyboard_shifted
+	addeq	r1, =keyboard_shifted
 	beq	@@keyboard_shift
 	cmp	r0, 15
-	ldreq	r1, =keyboard
+	addeq	r1, =keyboard
 	beq	@@keyboard_shift
 	cmp	r0, 0
 	blne	f_print_char
@@ -172,7 +171,6 @@ f_calc_touchscreen_pos:
 	bx	lr
 
 arm9_debug_handle:
-	.brk
 	mov	r10, 0x04000000
 
 	; Disable interrupts

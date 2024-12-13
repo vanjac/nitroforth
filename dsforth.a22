@@ -5,8 +5,8 @@
 .fix
 .strict
 
-arm9_dest equ 0x02000000
-arm7_dest equ 0x037F8000 ; shared WRAM mirror (allocated to ARM7 by default)
+arm9_dest = 0x02000000
+arm7_dest = 0x037F8000 ; shared WRAM mirror (allocated to ARM7 by default)
 
 org 0
 
