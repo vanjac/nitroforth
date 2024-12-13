@@ -158,7 +158,7 @@ rpop:
 
 name_KEY:
 	dd	name_rpop ; link
-	db	3,'KEY' ; name
+	db	3,'key' ; name
 	.align	4
 KEY:
 	; TODO: add input buffer
@@ -181,7 +181,7 @@ f_key:
 
 name_EMIT:
 	dd	name_KEY ; link
-	db	4,'EMIT' ; name
+	db	4,'emit' ; name
 	.align	4
 EMIT:
 	push	lr
@@ -193,7 +193,7 @@ EMIT:
 
 name_WORD:
 	dd	name_EMIT ; link
-	db	4,'WORD' ; name
+	db	4,'word' ; name
 	.align	4
 WORD:
 	push	r4,lr
@@ -226,7 +226,7 @@ WORD:
 ; print a string
 name_TYPE:
 	dd	name_WORD ; link
-	db	4,'TYPE' ; name
+	db	4,'type' ; name
 	.align	4
 TYPE:
 	push	lr
@@ -239,7 +239,7 @@ TYPE:
 ; print number in hex
 name_Xdot:
 	dd	name_TYPE ; link
-	db	2,'X.' ; name
+	db	2,'x.' ; name
 	.align	4
 Xdot:
 	push	lr
