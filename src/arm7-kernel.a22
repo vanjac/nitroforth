@@ -53,7 +53,6 @@ arm7_halt_loop:
 	tst	r6, 0x400000 ; Pen IS down
 	bne	arm7_halt_loop ; not pressed
 
-	mov	r7, 0 ; read data
 	; Setup the SPI bus for TSC
 	add	r0, r10, 0x1C0 ; SPICNT
 	ldr	r1, =0x8A01 ; Select TSC @2MHz, enable chipselect
@@ -69,20 +68,38 @@ arm7_halt_loop:
 	mov	r1, 0x90 ; Mode 0, Differential, 12-bit, Channel 1
 	strb	r1, [r0, 2] ; SPIDATA
 	bl	f_read_tsc_12bit
-	orr	r1, r1, r4, LSL#16
+	orr	r4, r1, r4, LSL#16
 
 	; TODO: filter out noise! see GBATEK "Touchscreen Notes"
 
-	; Send IPC
-	str	r1, [r10, 0x188] ; IPCFIFOSEND
-
 	; Disable Chipselect Hold
+	mov	r6, 0
 	ldr	r1, =0x8201
 	strh	r1, [r0]
-	strb	r7, [r0, 2]
+	strb	r6, [r0, 2]
 	; Disable SPI bus
 	mov	r1, 0
 	strh	r1, [r0]
+
+	ldr	r1, [r10, 0x184] ; IPCFIFOCNT
+	tst	r1, 0x2 ; FIFO full
+	bne	@@error_beep
+	; Send IPC
+	str	r4, [r10, 0x188] ; IPCFIFOSEND
+
+	b	arm7_halt_loop
+
+@@error_beep:
+	ldr	r1, =0xE3200020
+	str	r1, [r10, 0x480] ; SOUND8CNT
+	ldr	r1, =0xFFFFED68
+	str	r1, [r10, 0x488] ; SOUND8TMR
+	ldr	r0, =0x100000
+	swi	0x30000 ; WaitByLoop
+	mov	r1, 0
+	str	r1, [r10, 0x480] ; SOUND8CNT
+	ldr	r0, =0x100000
+	swi	0x30000 ; WaitByLoop
 
 	b	arm7_halt_loop
 
