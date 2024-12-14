@@ -1,5 +1,10 @@
 data_stack_top = (dtcm_loc + 0x2000)
 
+word_length_mask = 0x1F
+word_length_bits = 5
+word_hidden_flag = 0x20
+word_immediate_flag = 0x80
+
 ; dsForth is subroutine-threaded
 
 ; r0:	Scratch
@@ -47,7 +52,7 @@ DROP:
 
 name_SWAP:
 	dd	name_DROP ; link
-	db	4,'drop' ; name
+	db	4,'swap' ; name
 	.align	4
 SWAP:
 	swp	r9, r9, [r8]
@@ -136,7 +141,7 @@ LATEST:
 	add	r9, =var_LATEST
 	bx	lr
 var_LATEST:
-	dd	0 ; TODO
+	dd	name_FIND ; TODO
 
 name_rpush:
 	dd	name_LATEST ; link
@@ -200,7 +205,7 @@ WORD:
 
 @@find_non_blank:
 	bl	f_key
-	cmp	r0, 32 ; space
+	cmp	r0, ' '
 	cmpne	r0, 10 ; newline
 	beq	@@find_non_blank ; keep searching
 
@@ -209,7 +214,7 @@ WORD:
 	strb	r0, [r4]
 	add	r4, r4, 1
 	bl	f_key
-	cmp	r0, 32 ; space
+	cmp	r0, ' '
 	cmpne	r0, 10 ; newline
 	bne	@@append_loop ; keep appending
 
@@ -251,12 +256,12 @@ Xdot:
 
 name_NUMBER:
 	dd	name_Xdot ; link
-	db	6,'number'
+	db	6,'number' ; name
 	.align	4
 NUMBER:
 	push	r4
 
-	ldr	r0, [r8] ; char ptr (don't move stack)
+	ldmfd	[r8]!, r0 ; char ptr (don't move stack)
 	mov	r1, 10   ; base
 	mov	r2, 0    ; value
 
@@ -293,6 +298,46 @@ NUMBER:
 	cmp	r4, '-'
 	rsbeq	r2, r2, 0 ; negate
 
-	str	r2, [r8]
+	stmfd	[r8]!, r2
 	pop	r4
 	bx	lr
+
+name_FIND:
+	dd	name_NUMBER ; link
+	db	4,'find' ; name
+	.align	4
+FIND:
+	push	r4
+	ldmfd	[r8]!, r0 ; string ptr
+	mov	r1, r9    ; string len
+	ldr	r9, [var_LATEST] ; header ptr
+
+@@search_loop:
+	cmp	r9, 0
+	beq	@@done
+
+	ldrb	r2, [r9, 4] ; word len
+	mov	r2, r2, LSL#(32 - word_length_bits - 1) ; include hidden flag
+	mov	r2, r2, LSR#(32 - word_length_bits - 1)
+	cmp	r2, r1
+	bne	@@search_next ; length not equal, or hidden flag set
+
+	; strcmp (TODO: optimize!)
+	sub	r2, r2, 1
+@@strcmp_loop:
+	ldrb	r3, [r0, r2]
+	add	r4, r2, 5 ; word name offset
+	ldrb	r4, [r9, r4]
+	cmp	r3, r4
+	bne	@@search_next
+	subs	r2, r2, 1
+	bge	@@strcmp_loop
+
+	; matching!
+@@done:
+	pop	r4
+	bx	lr
+
+@@search_next:
+	ldr	r9, [r9]
+	b	@@search_loop
