@@ -248,3 +248,51 @@ Xdot:
 	ldmfd	[r8]!, r9
 	pop	lr
 	bx	lr
+
+name_NUMBER:
+	dd	name_Xdot ; link
+	db	6,'number'
+	.align	4
+NUMBER:
+	push	r4
+
+	ldr	r0, [r8] ; char ptr (don't move stack)
+	mov	r1, 10   ; base
+	mov	r2, 0    ; value
+
+	cmp	r9, 0 ; chars remaining
+	beq	@@done
+
+	ldrb	r4, [r0] ; negative sign or hex prefix? (can't use both)
+	cmp	r4, '$'
+	moveq	r1, 16
+	cmpne	r4, '-'
+	addeq	r0, r0, 1 ; either - or $ -- move ahead 1 char
+	subeqs	r9, r9, 1
+	beq	@@done
+
+@@parse_loop:
+	ldrb	r3, [r0] ; char
+	sub	r3, r3, '0'
+	cmp	r3, 9
+	bls	@@not_letter
+	; TODO: support lowercase letters
+	cmp	r3, ('A' - '0')
+	blo	@@done ; not valid (between '9' and 'A')
+	subs	r3, r3, ('A' - '9' - 1)
+@@not_letter:
+	cmp	r3, r1
+	bhs	@@done   ; digit out of range
+	mla	r2, r2, r1, r3
+
+	add	r0, r0, 1
+	subs	r9, r9, 1
+	bne	@@parse_loop
+
+@@done:
+	cmp	r4, '-'
+	rsbeq	r2, r2, 0 ; negate
+
+	str	r2, [r8]
+	pop	r4
+	bx	lr
