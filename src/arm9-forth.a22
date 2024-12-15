@@ -28,10 +28,6 @@ start_forth:
 	ldr	r8, =data_stack_top ; Set the data stack pointer
 
 @@interp_loop:
-	bl	LIT
-	dd	10 ; newline
-	bl	EMIT
-
 	bl	WORD
 	bl	OVER ; word ptr
 	bl	OVER ; word len
@@ -70,6 +66,9 @@ start_forth:
 	bl	TYPE
 	bl	LIT
 	dd	'?'
+	bl	EMIT
+	bl	LIT
+	dd	10 ; newline
 	bl	EMIT
 	b	@@interp_loop
 
@@ -262,6 +261,7 @@ f_key:
 	push	r4,lr
 	bl	f_await_keypress
 	mov	r4, r0
+	orr	r0, r0, 0x1000 ; palette 1
 	bl	f_print_char
 	mov	r0, r4
 	pop	r4,lr

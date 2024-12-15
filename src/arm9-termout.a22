@@ -30,12 +30,13 @@ f_init_term_out:
 
 	bx	lr
 
-; r0: char
+; r0: char + palette
 f_print_char:
 	ldr	r1, [cursor]
-	cmp	r0, 0xA
+	mov	r2, r0, LSL#24 ; remove palette
+	cmp	r2, 0x0A000000
 	beq	@@newline
-	cmp	r0, 0x8
+	cmp	r2, 0x08000000
 	beq	@@backspace
 	mov	r3, r1, LSL#1
 	ldr	r2, =term_bg_screen

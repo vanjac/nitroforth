@@ -33,6 +33,8 @@ arm9_entry2:
 	ldr	r0, =0x54DF480B ; palette colors
 	ldr	r1, =0x05000400 ; palette address
 	str	r0, [r1]
+	ldr	r0, =0x7f4d0000
+	str	r0, [r1, 0x20]
 	ldr	r0, =0x0EFF0000
 	str	r0, [r1, 0x200]
 
