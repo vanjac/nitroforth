@@ -5,6 +5,10 @@ word_length_bits = 5
 word_hidden_flag = 0x20
 word_immediate_flag = 0x80
 
+input_buffer:
+	defs	512
+input_buffer_end:
+
 ; dsForth is subroutine-threaded
 
 ; r0:	Scratch
@@ -48,7 +52,7 @@ start_forth:
 	beq	@@execute
 
 	; compile word
-	bl	CALL
+	bl	CALLcomma
 	b	@@interp_loop
 
 @@execute:
@@ -79,7 +83,7 @@ start_forth:
 	; compile literal
 	bl	LIT
 		dd	LIT
-	bl	CALL
+	bl	CALLcomma
 	bl	COMMA
 
 	b	@@interp_loop
@@ -96,8 +100,6 @@ start_forth:
 	dd	10 ; newline
 	bl	EMIT
 	b	@@interp_loop
-
-.pool
 
 ; Dictionary:
 
@@ -357,7 +359,6 @@ name_KEY:
 	db	3,'key' ; name
 	.align	4
 KEY:
-	; TODO: add input buffer, support backspace
 	push	lr
 	bl	f_key
 	stmfd	[r8]!, r9
@@ -366,14 +367,50 @@ KEY:
 	bx	lr
 
 f_key:
-	push	r4,lr
+	push	r4-r6,lr
+	ldr	r5, [curkey]
+	ldr	r1, [buftop]
+	cmp	r5, r1
+	bhs	@@get_more_input
+
+@@get_buffered_input:
+	ldrb	r0, [r5]
+	add	r5, r5, 1
+	str	r5, [curkey]
+
+	pop	r4-r6,lr
+	bx	lr
+
+@@get_more_input:
+	ldr	r5, =input_buffer ; curkey
+	mov	r6, r5 ; buftop
+@@lineread_loop:
 	bl	f_await_keypress
+	cmp	r0, 8 ; backspace
+	beq	@@backspace
+	; add character
+	strb	r0, [r6]
+	add	r6, r6, 1
+@@print_char:
 	mov	r4, r0
 	orr	r0, r0, 0x1000 ; palette 1
 	bl	f_print_char
-	mov	r0, r4
-	pop	r4,lr
-	bx	lr
+	cmp	r4, 10 ; newline
+	bne	@@lineread_loop
+
+	str	r6, [buftop]
+	b	@@get_buffered_input
+
+@@backspace:
+	cmp	r6, r5
+	bls	@@lineread_loop ; can't backspace
+	sub	r6, r6, 1
+	b	@@print_char
+
+curkey:
+	dd	input_buffer
+buftop:
+	dd	input_buffer
 
 ; ( char -- )
 name_EMIT:
@@ -649,11 +686,11 @@ colon:
 
 ; assemble a call ("bl") instruction
 ; ( code -- )
-name_CALL:
+name_CALLcomma:
 	dd	name_colon
-	db	4,'call' ; name
+	db	5,'call,' ; name
 	.align	4
-CALL:
+CALLcomma:
 	ldr	r0, [var_HERE]
 	sub	r1, r9, r0
 	sub	r1, r1, 8
@@ -666,14 +703,14 @@ CALL:
 	bx	lr
 
 name_semicolon:
-	dd	name_CALL ; link
+	dd	name_CALLcomma ; link
 	db	(1 or word_immediate_flag),';' ; name
 	.align	4
 semicolon:
 	push	lr
 	bl	LIT
 		dd	EXIT
-	bl	CALL
+	bl	CALLcomma
 	bl	LATEST
 	bl	fetch
 	bl	HIDDEN
@@ -681,3 +718,4 @@ semicolon:
 	bl	EXIT
 
 latest_word = name_semicolon
+.pool

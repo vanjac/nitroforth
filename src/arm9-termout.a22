@@ -83,8 +83,6 @@ f_print_char:
 	b	@@update_cursor
 
 @@backspace:
-	tst	r1, 0x1F
-	bxeq	lr ; return if can't backspace
 	sub	r1, r1, 1
 	mov	r3, r1, LSL#1
 	mov	r0, 0
