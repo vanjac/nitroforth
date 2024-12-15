@@ -241,9 +241,29 @@ INVERT:
 	mvn	r9, r9
 	bx	lr
 
+; ( a b -- a>>b )
+name_LSHIFT:
+	dd	name_INVERT ; link
+	db	6,'lshift' ; name
+	.align	4
+LSHIFT:
+	ldmfd	[r8]!, r0
+	mov	r9, r0, LSL r9
+	bx	lr
+
+; ( a b -- a>>b )
+name_RSHIFT:
+	dd	name_LSHIFT ; link
+	db	6,'rshift' ; name
+	.align	4
+RSHIFT:
+	ldmfd	[r8]!, r0
+	mov	r9, r0, LSR r9
+	bx	lr
+
 ; ( -- )
 name_EXIT:
-	dd	name_INVERT ; link
+	dd	name_RSHIFT ; link
 	db	4,'exit' ; name
 	.align	4
 EXIT:
