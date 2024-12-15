@@ -27,15 +27,51 @@ word_immediate_flag = 0x80
 start_forth:
 	ldr	r8, =data_stack_top ; Set the data stack pointer
 
-@@echo_loop:
-	bl	WORD
-	bl	TYPE
+@@interp_loop:
 	bl	LIT
 	dd	10 ; newline
 	bl	EMIT
-	b	@@echo_loop
 
-	bx	lr
+	bl	WORD
+	bl	OVER ; word ptr
+	bl	OVER ; word len
+	bl	FIND
+	cmp	r9, 0
+	beq	@@not_in_dict
+
+	bl	NIP ; word ptr
+	bl	NIP ; word len
+	bl	toCFA
+	; call
+	mov	r0, r9
+	ldmfd	[r8]!, r9
+	blx	r0
+
+	b	@@interp_loop
+
+@@not_in_dict:
+	bl	DROP ; found ptr (zero)
+
+	bl	OVER ; word ptr
+	bl	OVER ; word len
+	bl	NUMBER
+	cmp	r9, 0
+	bne	@@not_number
+
+	bl	DROP ; uncoverted chars (zero)
+	bl	NIP ; word ptr
+	bl	NIP ; word len
+	b	@@interp_loop
+
+@@not_number:
+	bl	DROP
+	bl	DROP
+
+	bl	TYPE
+	bl	LIT
+	dd	'?'
+	bl	EMIT
+	b	@@interp_loop
 
 .pool
 
@@ -75,8 +111,16 @@ OVER:
 	ldr	r9, [r8, 4]
 	bx	lr
 
-name_EXIT:
+name_NIP:
 	dd	name_OVER ; link
+	db	3,'nip' ; name
+	.align	4
+NIP:
+	add	r8, r8, 4
+	bx	lr
+
+name_EXIT:
+	dd	name_NIP ; link
 	db	4,'exit' ; name
 	.align	4
 EXIT:
@@ -260,6 +304,7 @@ name_NUMBER:
 	.align	4
 NUMBER:
 	push	r4
+	; TODO: support fixed point fractions (16.16)
 
 	ldmfd	[r8]!, r0 ; char ptr (don't move stack)
 	mov	r1, 10   ; base
@@ -341,3 +386,17 @@ FIND:
 @@search_next:
 	ldr	r9, [r9]
 	b	@@search_loop
+
+name_toCFA:
+	dd	name_FIND ; link
+	db	4,'>cfa' ; name
+	.align	4
+toCFA:
+	add	r9, r9, 4
+	ldrb	r0, [r9] ; word length / flags
+	mov	r0, r0, LSL#(32 - word_length_bits)
+	mov	r0, r0, LSR#(32 - word_length_bits)
+	add	r9, r9, r0  ; skip name
+	add	r9, r9, 4   ; skip length, padding
+	bic	r9, r9, 0x3 ; align
+	bx	lr

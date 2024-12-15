@@ -51,7 +51,7 @@ arm9_entry2:
 	bl	f_render_keyboard
 
 	bl	f_print_string_inline
-		db	'hello :3',10,10,0
+		db	'hello :3',10,0
 		.align	4
 
 	ldr	r0, =(dtcm_loc + 0x3FFC) ; IRQ vector
