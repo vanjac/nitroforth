@@ -77,6 +77,7 @@ start_forth:
 ; Dictionary:
 
 
+; ( a -- )
 name_DROP:
 	dd	0 ; link
 	db	4,'drop' ; name
@@ -85,6 +86,7 @@ DROP:
 	ldmfd	[r8]!, r9
 	bx	lr
 
+; ( a b -- b a )
 name_SWAP:
 	dd	name_DROP ; link
 	db	4,'swap' ; name
@@ -93,6 +95,7 @@ SWAP:
 	swp	r9, r9, [r8]
 	bx	lr
 
+; ( a -- a a )
 name_DUP:
 	dd	name_SWAP ; link
 	db	3,'dup' ; name
@@ -101,6 +104,7 @@ DUP:
 	stmfd	[r8]!, r9
 	bx	lr
 
+; ( a b -- a b a )
 name_OVER:
 	dd	name_DUP ; link
 	db	4,'over' ; name
@@ -110,6 +114,7 @@ OVER:
 	ldr	r9, [r8, 4]
 	bx	lr
 
+; ( a b -- b )
 name_NIP:
 	dd	name_OVER ; link
 	db	3,'nip' ; name
@@ -118,6 +123,7 @@ NIP:
 	add	r8, r8, 4
 	bx	lr
 
+; ( a b -- a+b )
 name_plus:
 	dd	name_NIP ; link
 	db	1,'+' ; name
@@ -127,6 +133,7 @@ plus:
 	add	r9, r0, r9
 	bx	lr
 
+; ( a b -- a-b )
 name_minus:
 	dd	name_plus ; link
 	db	1,'-' ; name
@@ -136,6 +143,7 @@ minus:
 	sub	r9, r0, r9
 	bx	lr
 
+; ( a b -- a*b )
 name_times:
 	dd	name_minus ; link
 	db	1,'*' ; name
@@ -145,6 +153,8 @@ times:
 	mul	r9, r0, r9
 	bx	lr
 
+; TODO: replace with /MOD
+; ( a b -- a/b )
 name_divide:
 	dd	name_times ; link
 	db	1,'/' ; name
@@ -158,8 +168,18 @@ divide:
 	pop	lr
 	bx	lr
 
-name_AND:
+; ( a -- -a )
+name_NEGATE:
 	dd	name_divide ; link
+	db	6,'negate' ; name
+	.align	4
+NEGATE:
+	rsb	r9, r9, 0
+	bx	lr
+
+; ( a b -- a&b )
+name_AND:
+	dd	name_NEGATE ; link
 	db	3,'and' ; name
 	.align	4
 AND:
@@ -167,6 +187,7 @@ AND:
 	and	r9, r0, r9
 	bx	lr
 
+; ( a b -- a|b )
 name_OR:
 	dd	name_AND ; link
 	db	2,'or' ; name
@@ -176,6 +197,7 @@ OR:
 	orr	r9, r0, r9
 	bx	lr
 
+; ( a b -- a^b )
 name_XOR:
 	dd	name_OR ; link
 	db	3,'xor' ; name
@@ -185,6 +207,7 @@ XOR:
 	eor	r9, r0, r9
 	bx	lr
 
+; ( a -- ~a )
 name_INVERT:
 	dd	name_XOR ; link
 	db	6,'invert' ; name
@@ -193,6 +216,7 @@ INVERT:
 	mvn	r9, r9
 	bx	lr
 
+; ( -- )
 name_EXIT:
 	dd	name_INVERT ; link
 	db	4,'exit' ; name
@@ -201,6 +225,7 @@ EXIT:
 	pop	lr
 	bx	lr
 
+; ( -- value )
 name_LIT:
 	dd	name_EXIT ; link
 	db	3,'lit' ; name
@@ -210,6 +235,7 @@ LIT:
 	ldmia	[lr]!, r9
 	bx	lr
 
+; ( data addr -- )
 name_store:
 	dd	name_LIT ; link
 	db	1,'!' ; name
@@ -220,6 +246,7 @@ store:
 	ldmfd	[r8]!, r9
 	bx	lr
 
+; ( addr -- data )
 name_fetch:
 	dd	name_store ; link
 	db	1,'@' ; name
@@ -279,6 +306,7 @@ rpop:
 	pop	r9
 	bx	lr
 
+; ( -- char )
 name_KEY:
 	dd	name_rpop ; link
 	db	3,'key' ; name
@@ -301,8 +329,8 @@ f_key:
 	mov	r0, r4
 	pop	r4,lr
 	bx	lr
-	
 
+; ( char -- )
 name_EMIT:
 	dd	name_KEY ; link
 	db	4,'emit' ; name
@@ -315,6 +343,7 @@ EMIT:
 	pop	lr
 	bx	lr
 
+; ( -- addr len )
 name_WORD:
 	dd	name_EMIT ; link
 	db	4,'word' ; name
@@ -348,6 +377,7 @@ WORD:
 	defs	32
 
 ; print a string
+; ( addr len -- )
 name_TYPE:
 	dd	name_WORD ; link
 	db	4,'type' ; name
@@ -361,6 +391,7 @@ TYPE:
 	bx	lr
 
 ; print number in hex
+; ( num -- )
 name_Xdot:
 	dd	name_TYPE ; link
 	db	2,'x.' ; name
@@ -373,6 +404,7 @@ Xdot:
 	pop	lr
 	bx	lr
 
+; ( addr len -- value unparsed )
 name_NUMBER:
 	dd	name_Xdot ; link
 	db	6,'number' ; name
@@ -422,6 +454,7 @@ NUMBER:
 	pop	r4
 	bx	lr
 
+; ( addr len -- header )
 name_FIND:
 	dd	name_NUMBER ; link
 	db	4,'find' ; name
@@ -462,6 +495,7 @@ FIND:
 	ldr	r9, [r9]
 	b	@@search_loop
 
+; ( header -- code )
 name_toCFA:
 	dd	name_FIND ; link
 	db	4,'>cfa' ; name
