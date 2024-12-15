@@ -224,7 +224,7 @@ LATEST:
 	add	r9, =var_LATEST
 	bx	lr
 var_LATEST:
-	dd	name_FIND ; TODO
+	dd	name_toCFA ; TODO
 
 name_rpush:
 	dd	name_LATEST ; link
@@ -249,7 +249,7 @@ name_KEY:
 	db	3,'key' ; name
 	.align	4
 KEY:
-	; TODO: add input buffer
+	; TODO: add input buffer, support backspace
 	push	lr
 	bl	f_key
 	stmfd	[r8]!, r9

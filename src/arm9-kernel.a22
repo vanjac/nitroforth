@@ -38,6 +38,8 @@ arm9_entry2:
 	ldr	r0, =0x0EFF0000
 	str	r0, [r1, 0x200]
 
+	mov	r1, 0x00010000 ; set Engine A to mode 1 (graphics display)
+	str	r1, [r10]
 	ldr	r11, =0x04001000 ; DISPCNT B
 	ldr	r1, =0x00011100 ; set Engine B to mode 1 (graphics display). enable BG0+OBJ
 	str	r1, [r11]
