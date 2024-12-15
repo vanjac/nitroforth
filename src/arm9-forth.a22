@@ -119,8 +119,48 @@ NIP:
 	add	r8, r8, 4
 	bx	lr
 
-name_EXIT:
+name_plus:
 	dd	name_NIP ; link
+	db	1,'+' ; name
+	.align	4
+plus:
+	ldmfd	[r8]!, r0
+	add	r9, r0, r9
+	bx	lr
+
+name_minus:
+	dd	name_plus ; link
+	db	1,'-' ; name
+	.align	4
+minus:
+	ldmfd	[r8]!, r0
+	sub	r9, r0, r9
+	bx	lr
+
+name_times:
+	dd	name_minus ; link
+	db	1,'*' ; name
+	.align	4
+times:
+	ldmfd	[r8]!, r0
+	mul	r9, r0, r9
+	bx	lr
+
+name_divide:
+	dd	name_times ; link
+	db	1,'/' ; name
+	.align	4
+divide:
+	push	lr
+	ldmfd	[r8]!, r0
+	mov	r1, r9
+	bl	f_arm9_divide_32
+	mov	r9, r0
+	pop	lr
+	bx	lr
+
+name_EXIT:
+	dd	name_divide ; link
 	db	4,'exit' ; name
 	.align	4
 EXIT:
