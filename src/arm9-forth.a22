@@ -25,6 +25,8 @@ word_immediate_flag = 0x80
 ; r15:	Program Counter
 
 start_forth:
+	push	r4
+
 	ldr	r8, =data_stack_top ; Set the data stack pointer
 
 @@interp_loop:
@@ -37,10 +39,22 @@ start_forth:
 
 	bl	NIP ; word ptr
 	bl	NIP ; word len
+	ldrb	r4, [r9, 4]
 	bl	toCFA
+	tst	r4, word_immediate_flag
+	bne	@@execute
+	ldr	r0, [var_STATE]
+	cmp	r0, 0
+	beq	@@execute
+
+	; compile word
+	bl	CALL
+	b	@@interp_loop
+
+@@execute:
 	; call
 	mov	r0, r9
-	ldmfd	[r8]!, r9
+	ldmfd	[r8]!, r9 ; drop
 	blx	r0
 
 	b	@@interp_loop
@@ -57,6 +71,17 @@ start_forth:
 	bl	DROP ; uncoverted chars (zero)
 	bl	NIP ; word ptr
 	bl	NIP ; word len
+
+	ldr	r0, [var_STATE]
+	cmp	r0, 0
+	beq	@@interp_loop
+
+	; compile literal
+	bl	LIT
+		dd	LIT
+	bl	CALL
+	bl	COMMA
+
 	b	@@interp_loop
 
 @@not_number:
@@ -560,7 +585,7 @@ name_lbrac:
 	db	(1 or word_immediate_flag),'[' ; name
 	.align	4
 lbrac:
-	mov	r0, 1
+	mov	r0, 0
 	str	r0, [var_STATE]
 	bx	lr
 
@@ -569,7 +594,7 @@ name_rbrac:
 	db	1,']' ; name
 	.align	4
 rbrac:
-	mov	r0, 0
+	mov	r0, 1
 	str	r0, [var_STATE]
 	bx	lr
 
