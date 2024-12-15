@@ -158,8 +158,43 @@ divide:
 	pop	lr
 	bx	lr
 
-name_EXIT:
+name_AND:
 	dd	name_divide ; link
+	db	3,'and' ; name
+	.align	4
+AND:
+	ldmfd	[r8]!, r0
+	and	r9, r0, r9
+	bx	lr
+
+name_OR:
+	dd	name_AND ; link
+	db	2,'or' ; name
+	.align	4
+OR:
+	ldmfd	[r8]!, r0
+	orr	r9, r0, r9
+	bx	lr
+
+name_XOR:
+	dd	name_OR ; link
+	db	3,'xor' ; name
+	.align	4
+XOR:
+	ldmfd	[r8]!, r0
+	eor	r9, r0, r9
+	bx	lr
+
+name_INVERT:
+	dd	name_XOR ; link
+	db	6,'invert' ; name
+	.align	4
+INVERT:
+	mvn	r9, r9
+	bx	lr
+
+name_EXIT:
+	dd	name_INVERT ; link
 	db	4,'exit' ; name
 	.align	4
 EXIT:
