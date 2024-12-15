@@ -275,7 +275,7 @@ HERE:
 	add	r9, =var_HERE
 	bx	lr
 var_HERE:
-	dd	0 ; TODO
+	dd	arm9_end ; TODO
 
 name_LATEST:
 	dd	name_HERE ; link
@@ -286,7 +286,7 @@ LATEST:
 	add	r9, =var_LATEST
 	bx	lr
 var_LATEST:
-	dd	name_toCFA ; TODO
+	dd	latest_word ; TODO
 
 name_rpush:
 	dd	name_LATEST ; link
@@ -509,3 +509,130 @@ toCFA:
 	add	r9, r9, 4   ; skip length, padding
 	bic	r9, r9, 0x3 ; align
 	bx	lr
+
+; ( addr len -- )
+name_CREATE:
+	dd	name_toCFA ; link
+	db	6,'create' ; name
+	.align	4
+CREATE:
+	push	r4
+	mov	r0, r9 ; length
+	ldmfd	[r8]!, r1,r9 ; str
+
+	ldr	r2, [var_HERE]
+	ldr	r3, [var_LATEST]
+	str	r2, [var_LATEST] ; update latest
+
+	str	r3, [r2] ; link pointer
+	strb	r0, [r2, 4] ; length
+	add	r2, 5
+	mov	r4, 0
+@@copy_word:
+	ldrb	r3, [r1, r4]
+	strb	r3, [r2, r4]
+	add	r4, r4, 1
+	subs	r0, r0, 1
+	bgt	@@copy_word
+
+	add	r2, r2, r4
+	add	r2, r2, 3 ; padding
+	bic	r2, r2, 0x3 ; align
+	str	r2, [var_HERE]
+
+	pop	r4
+	bx	lr
+
+; ( data -- )
+name_comma:
+	dd	name_CREATE ; link
+	db	1,',' ; name
+	.align	4
+comma:
+	ldr	r0, [var_HERE]
+	stmia	[r0]!, r9
+	str	r0, [var_HERE]
+	ldmfd	[r8]!, r9
+	bx	lr
+
+name_lbrac:
+	dd	name_comma ; link
+	db	(1 or word_immediate_flag),'[' ; name
+	.align	4
+lbrac:
+	mov	r0, 1
+	str	r0, [var_STATE]
+	bx	lr
+
+name_rbrac:
+	dd	name_lbrac ; link
+	db	1,']' ; name
+	.align	4
+rbrac:
+	mov	r0, 0
+	str	r0, [var_STATE]
+	bx	lr
+
+; ( addr -- )
+name_HIDDEN:
+	dd	name_rbrac
+	db	6,'hidden' ; name
+	.align	4
+HIDDEN:
+	ldrb	r0, [r9, 4]
+	eor	r0, r0, word_hidden_flag
+	strb	r0, [r9, 4]
+	ldmfd	[r8]!, r9
+	bx	lr
+
+name_colon:
+	dd	name_HIDDEN ; link
+	db	1,':' ; name
+	.align	4
+colon:
+	push	lr
+	bl	WORD
+	bl	CREATE
+	bl	LIT
+		dd	0xE92D4000 ; 'push lr' instruction
+	bl	COMMA
+	bl	LATEST
+	bl	fetch
+	bl	HIDDEN
+	bl	rbrac
+	bl	EXIT
+
+; assemble a call ("bl") instruction
+; ( code -- )
+name_CALL:
+	dd	name_colon
+	db	4,'call' ; name
+	.align	4
+CALL:
+	ldr	r0, [var_HERE]
+	sub	r1, r9, r0
+	sub	r1, r1, 8
+	mov	r2, 0xEB000000
+	mov	r1, r1, LSL#6
+	orr	r1, r2, r1, LSR#8
+	stmia	[r0]!, r1
+	str	r0, [var_HERE]
+	ldmfd	[r8]!, r9
+	bx	lr
+
+name_semicolon:
+	dd	name_CALL ; link
+	db	(1 or word_immediate_flag),';' ; name
+	.align	4
+semicolon:
+	push	lr
+	bl	LIT
+		dd	EXIT
+	bl	CALL
+	bl	LATEST
+	bl	fetch
+	bl	HIDDEN
+	bl	lbrac
+	bl	EXIT
+
+latest_word = name_semicolon
