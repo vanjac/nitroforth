@@ -81,6 +81,7 @@ start_forth:
 	beq	@@interp_loop
 
 	; compile literal
+	; TODO: optimize small literals
 	bl	LIT
 		dd	LIT
 	bl	CALLcomma
@@ -717,5 +718,23 @@ semicolon:
 	bl	lbrac
 	bl	EXIT
 
-latest_word = name_semicolon
+name_comment:
+	dd	name_semicolon ; link
+	db	(1 or word_immediate_flag),'(' ; name
+	.align	4
+comment:
+	push	r4,lr
+	mov	r4, 1 ; depth
+@@loop:
+	bl	f_key
+	cmp	r0, '('
+	addeq	r4, r4, 1
+	cmp	r0, ')'
+	subeq	r4, r4, 1
+	cmp	r4, 0
+	bne	@@loop
+	pop	r4,lr
+	bx	lr
+
+latest_word = name_comment
 .pool
