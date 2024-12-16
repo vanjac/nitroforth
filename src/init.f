@@ -1,4 +1,10 @@
 
+: f-immed $80 ;
+
+( -- )
+: immediate latest @ 4 + dup c@ f-immed xor swap c! ; immediate
+
+
 ( display initialize )
 
 ( set Engine A to mode 1 (graphics display) )

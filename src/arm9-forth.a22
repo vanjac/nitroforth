@@ -299,8 +299,28 @@ fetch:
 	ldr	r9, [r9]
 	bx	lr
 
-name_STATE:
+; ( data addr -- )
+name_Cstore:
 	dd	name_fetch ; link
+	db	2,'c!' ; name
+	.align	4
+Cstore:
+	ldmfd	[r8]!, r0 ; data to store
+	strb	r0, [r9]
+	ldmfd	[r8]!, r9
+	bx	lr
+
+; ( addr -- data )
+name_Cfetch:
+	dd	name_Cstore ; link
+	db	2,'c@' ; name
+	.align	4
+Cfetch:
+	ldrb	r9, [r9]
+	bx	lr
+
+name_STATE:
+	dd	name_Cfetch ; link
 	db	5,'state' ; name
 	.align	4
 STATE:
