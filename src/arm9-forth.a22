@@ -24,12 +24,42 @@ word_immediate_flag = 0x80
 ; r14:	Link Register
 ; r15:	Program Counter
 
+var_return_stack_top:
+	dd	0
+
 start_forth:
 	push	r4
 
 	ldr	r8, =data_stack_top ; Set the data stack pointer
+	str	sp, [var_return_stack_top] ; Store the return stack top
 
 @@interp_loop:
+
+	; check for errors
+	ldr	r4, =data_stack_top
+	cmp	r8, r4
+	bls	@@no_data_underflow
+	bl	f_print_string_inline
+		db	10,'!! Data Underflow !!',10,0
+		.align	4
+	ldr	r8, =data_stack_top ; reset data stack
+@@no_data_underflow:
+	ldr	r4, [var_return_stack_top]
+	cmp	sp, r4
+	bls	@@no_return_underflow
+	bl	f_print_string_inline
+		db	10,'!! Return Underflow !!',10,0
+		.align	4
+@@no_return_underflow:
+	cmp	sp, r4
+	bhs	@@return_empty
+	bl	f_print_string_inline
+		db	10,'!! Return Not Empty !!',10,0
+		.align	4
+@@return_empty:
+	mov	sp, r4 ; reset return stack always
+	; end error check
+
 	bl	WORD
 	bl	OVER ; word ptr
 	bl	OVER ; word len
