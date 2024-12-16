@@ -23,6 +23,13 @@ arm9_start:
 .include src\font.a22
 .include src\arm9-forth.a22
 
+	.align	4
+input_buffer:
+	.import	src\init.f
+init_end:
+	defs	(input_buffer + 1024 - $)
+input_buffer_end:
+
 arm9_end:
 org (arm9_end - arm9_start + arm9_src) ; move origin back to ROM space
 

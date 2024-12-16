@@ -5,10 +5,6 @@ word_length_bits = 5
 word_hidden_flag = 0x20
 word_immediate_flag = 0x80
 
-input_buffer:
-	defs	512
-input_buffer_end:
-
 ; dsForth is subroutine-threaded
 
 ; r0:	Scratch
@@ -411,7 +407,7 @@ f_key:
 curkey:
 	dd	input_buffer
 buftop:
-	dd	input_buffer
+	dd	init_end
 
 ; ( char -- )
 name_EMIT:

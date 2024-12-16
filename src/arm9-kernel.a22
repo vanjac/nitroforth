@@ -30,22 +30,6 @@ arm9_entry2:
 
 	mov	r10, 0x04000000 ; I/O start (constant!)
 
-	ldr	r0, =0x54DF480B ; palette colors
-	ldr	r1, =0x05000400 ; palette address
-	str	r0, [r1]
-	ldr	r0, =0x7f4d0000
-	str	r0, [r1, 0x20]
-	ldr	r0, =0x0EFF0000
-	str	r0, [r1, 0x200]
-
-	mov	r1, 0x00010000 ; set Engine A to mode 1 (graphics display)
-	str	r1, [r10]
-	ldr	r11, =0x04001000 ; DISPCNT B
-	ldr	r1, =0x00011100 ; set Engine B to mode 1 (graphics display). enable BG0+OBJ
-	str	r1, [r11]
-	mov	r1, 0x0400
-	strh	r1, [r11, 8] ; BG0CNT
-
 	mov	r1, 0x84 ; map VRAM C as Engine B BG-VRAM
 	strb	r1, [r10, 0x242]
 	mov	r1, 0x84 ; map VRAM D as Engine B OBJ-VRAM
