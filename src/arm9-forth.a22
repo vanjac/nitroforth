@@ -286,9 +286,92 @@ RSHIFT:
 	mov	r9, r0, LSR r9
 	bx	lr
 
+; ( a b -- a=b )
+name_eq:
+	dd	name_RSHIFT ; link
+	db	1,'=' ; name
+	.align	4
+eq:
+	ldmfd	[r8]!, r0
+	cmp	r0, r9
+	mvneq	r9, 0 ; true
+	movne	r9, 0 ; false
+	bx	lr
+
+; ( a b -- a<>b )
+name_ne:
+	dd	name_eq ; link
+	db	2,'<>' ; name
+	.align	4
+ne:
+	ldmfd	[r8]!, r0
+	cmp	r0, r9
+	mvnne	r9, 0 ; true
+	moveq	r9, 0 ; false
+	bx	lr
+
+; ( a b -- a<b )
+name_lt:
+	dd	name_ne ; link
+	db	1,'<' ; name
+	.align	4
+lt:
+	ldmfd	[r8]!, r0
+	cmp	r0, r9
+	mvnlt	r9, 0 ; true
+	movge	r9, 0 ; false
+	bx	lr
+
+; ( a b -- a<b )
+name_gt:
+	dd	name_lt ; link
+	db	1,'>' ; name
+	.align	4
+gt:
+	ldmfd	[r8]!, r0
+	cmp	r0, r9
+	mvngt	r9, 0 ; true
+	movle	r9, 0 ; false
+	bx	lr
+
+; ( a b -- a<=b )
+name_le:
+	dd	name_gt ; link
+	db	2,'<=' ; name
+	.align	4
+le:
+	ldmfd	[r8]!, r0
+	cmp	r0, r9
+	mvnle	r9, 0 ; true
+	movgt	r9, 0 ; false
+	bx	lr
+
+; ( a b -- a>=b )
+name_ge:
+	dd	name_le ; link
+	db	2,'>=' ; name
+	.align	4
+ge:
+	ldmfd	[r8]!, r0
+	cmp	r0, r9
+	mvnge	r9, 0 ; true
+	movlt	r9, 0 ; false
+	bx	lr
+
+; ( a -- a=0 )
+name_zeroeq:
+	dd	name_ge ; link
+	db	2,'0=' ; name
+	.align	4
+zeroeq:
+	cmp	r9, 0
+	mvneq	r9, 0 ; true
+	movne	r9, 0 ; false
+	bx	lr
+
 ; ( -- )
 name_EXIT:
-	dd	name_RSHIFT ; link
+	dd	name_zeroeq ; link
 	db	4,'exit' ; name
 	.align	4
 EXIT:
