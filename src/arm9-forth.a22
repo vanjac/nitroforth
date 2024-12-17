@@ -461,27 +461,27 @@ LATEST:
 var_LATEST:
 	dd	latest_word ; TODO
 
-name_rpush:
+name_Rpush:
 	dd	name_LATEST ; link
 	db	2,'>r' ; name
 	.align	4
-rpush:
+Rpush:
 	push	r9
 	ldmfd	[r8]!, r9
 	bx	lr
 
-name_rpop:
-	dd	name_rpush ; link
+name_Rpop:
+	dd	name_Rpush ; link
 	db	2,'r>' ; name
 	.align	4
-rpop:
+Rpop:
 	stmfd	[r8]!, r9
 	pop	r9
 	bx	lr
 
 ; ( -- char )
 name_KEY:
-	dd	name_rpop ; link
+	dd	name_Rpop ; link
 	db	3,'key' ; name
 	.align	4
 KEY:

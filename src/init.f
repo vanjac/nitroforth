@@ -1,6 +1,8 @@
 
 : f-immed
   $80 ;
+: docol
+  $E92D4000 ;
 
 ( make the most recently defined word immediate )
 : immediate ( -- )
@@ -12,6 +14,12 @@
 
 : [compile] immediate
   word find >cfa call, ;
+
+: doconst
+  r> @ ;
+
+: constant ( value -- )
+  word create docol , ' doconst call, , ;
 
 ( assemble a branch instruction )
 : 'branch ( offset -- instruction )
@@ -73,8 +81,7 @@ $00011100 $04001000 ! ( DISPCNT B )
 ( enable BG0 )
     $0400 $04001008 ! ( BG0CNT )
 
-: palette-b ( -- addr )
-  $05000400 ;
+$05000400 constant palette-b
 
 ( set initial palette colors )
 $54DF480B palette-b !        ( output text, background )
