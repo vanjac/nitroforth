@@ -50,6 +50,9 @@
 : cr ( -- )
   10 emit ;
 
+: space ( -- )
+  32 emit ;
+
 : ." ( -- ) ( TODO: make immediate! )
   begin key dup [char] " = if drop exit then emit again ;
 
@@ -59,7 +62,7 @@
 : $. ( value -- )
   8 begin
     swap dup 28 rshift hexchar emit 4 lshift swap 1 - dup 0=
-  until drop drop ;
+  until drop drop space ;
 
 ( display initialize )
 
