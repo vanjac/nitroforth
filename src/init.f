@@ -1,5 +1,6 @@
 
-: f-immed $80 ;
+: f-immed
+  $80 ;
 
 ( make the most recently defined word immediate )
 : immediate ( -- )
@@ -37,6 +38,18 @@
 : repeat immediate
   ' branch call, swap here @ - , [compile] then ;
 
+: again immediate
+  ' branch call, here @ - , ;
+
+: char ( -- c )
+  word drop c@ ;
+
+: ." ( -- ) ( TODO: make immediate! )
+  begin key dup [ char " lit, ] = if drop exit then emit again ;
+
+: cr ( -- )
+  10 emit ;
+
 ( display initialize )
 
 ( set Engine A to mode 1 (graphics display) )
@@ -53,3 +66,5 @@ $00011100 $04001000 ! ( DISPCNT B )
 $54DF480B palette-b !        ( output text, background )
 $7F4D0000 palette-b $20 + !  ( input text )
 $0EFF0000 palette-b $200 + ! ( cursor )
+
+." hello :3" cr

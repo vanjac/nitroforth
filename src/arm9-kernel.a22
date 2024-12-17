@@ -38,10 +38,6 @@ arm9_entry2:
 	bl	f_init_term_out
 	bl	f_render_keyboard
 
-	bl	f_print_string_inline
-		db	'hello :3',10,0
-		.align	4
-
 	ldr	r0, =(dtcm_loc + 0x3FFC) ; IRQ vector
 	add	r1, =arm9_intr_handle
 	str	r1, [r0]

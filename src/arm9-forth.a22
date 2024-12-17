@@ -598,6 +598,7 @@ TYPE:
 
 ; print number in hex
 ; ( num -- )
+; TODO: convert to Forth
 name_Xdot:
 	dd	name_TYPE ; link
 	db	2,'x.' ; name
