@@ -22,6 +22,18 @@
 : else immediate ( TODO: use 'branch single instruction? )
   ' branch call, here @ 0 , swap dup here @ swap - swap ! ; 
 
+: begin immediate
+  here @ ;
+
+: until immediate
+  ' 0branch call, here @ - , ;
+
+: while immediate ( cond -- ) ( TODO: same as if? )
+  ' 0branch call, here @ 0 , ;
+
+: repeat immediate
+  ' branch call, swap here @ - , dup here @ swap - swap ! ;
+
 ( display initialize )
 
 ( set Engine A to mode 1 (graphics display) )
