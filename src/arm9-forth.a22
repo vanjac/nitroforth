@@ -107,7 +107,7 @@ start_forth:
 	beq	@@interp_loop
 
 	; compile literal
-	bl	LITcomma
+	bl	LITERAL
 
 	b	@@interp_loop
 
@@ -760,11 +760,11 @@ CALLcomma:
 
 ; add a LIT instruction
 ; ( value -- )
-name_LITcomma:
+name_LITERAL:
 	dd	name_CALLcomma ; link
-	db	4,'lit,' ; name
+	db	7,'literal' ; name
 	.align	4
-LITcomma:
+LITERAL:
 	; TODO: optimize small literals
 	push	lr
 	bl	LIT
@@ -775,7 +775,7 @@ LITcomma:
 	bx	lr
 
 name_semicolon:
-	dd	name_LITcomma ; link
+	dd	name_LITERAL ; link
 	db	(1 or word_immediate_flag),';' ; name
 	.align	4
 semicolon:

@@ -7,7 +7,7 @@
   immediate ( immediate is immediate! )
 
 : ' immediate ( -- ) ( TODO: only works when compiled )
-  word find >cfa lit, ;
+  word find >cfa literal ;
 
 ( assemble a branch instruction )
 : 'branch ( offset -- instruction )
