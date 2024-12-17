@@ -1,9 +1,17 @@
 
 : f-immed $80 ;
 
-( -- )
-: immediate latest @ 4 + dup c@ f-immed xor swap c! ; immediate
+( make the most recently defined word immediate )
+: immediate ( -- )
+  latest @ 4 + dup c@ f-immed xor swap c! ;
+  immediate ( immediate is immediate! )
 
+: ' immediate ( -- ) ( TODO: only works when compiled )
+  word find >cfa lit, ;
+
+( assemble a branch instruction )
+: 'branch ( offset -- instruction )
+  4 - 6 lshift 8 rshift $EA000000 or ;
 
 ( display initialize )
 
@@ -14,9 +22,8 @@ $00011100 $04001000 ! ( DISPCNT B )
 ( enable BG0 )
     $0400 $04001008 ! ( BG0CNT )
 
-
-( -- addr )
-: palette-b $05000400 ;
+: palette-b ( -- addr )
+  $05000400 ;
 
 ( set initial palette colors )
 $54DF480B palette-b !        ( output text, background )

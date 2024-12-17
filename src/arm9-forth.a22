@@ -107,11 +107,7 @@ start_forth:
 	beq	@@interp_loop
 
 	; compile literal
-	; TODO: optimize small literals
-	bl	LIT
-		dd	LIT
-	bl	CALLcomma
-	bl	COMMA
+	bl	LITcomma
 
 	b	@@interp_loop
 
@@ -121,10 +117,10 @@ start_forth:
 
 	bl	TYPE
 	bl	LIT
-	dd	'?'
+		dd	'?'
 	bl	EMIT
 	bl	LIT
-	dd	10 ; newline
+		dd	10 ; newline
 	bl	EMIT
 	b	@@interp_loop
 
@@ -731,10 +727,23 @@ colon:
 	bl	rbrac
 	bl	EXIT
 
-; assemble a call ("bl") instruction
+; ( cond -- )
+name_0BRANCH:
+	dd	name_colon ; link
+	db	7,'0branch' ; name
+	.align	4
+0BRANCH:
+	cmp	r9, 0
+	ldreq	r0, [lr] ; offset
+	addeq	lr, lr, r0
+	addne	lr, lr, 4
+	ldmfd	[r8]!, r9
+	bx	lr
+
+; assemble a call ("bl") instruction and write to HERE
 ; ( code -- )
 name_CALLcomma:
-	dd	name_colon
+	dd	name_0BRANCH ; link
 	db	5,'call,' ; name
 	.align	4
 CALLcomma:
@@ -749,8 +758,24 @@ CALLcomma:
 	ldmfd	[r8]!, r9
 	bx	lr
 
-name_semicolon:
+; add a LIT instruction
+; ( value -- )
+name_LITcomma:
 	dd	name_CALLcomma ; link
+	db	4,'lit,' ; name
+	.align	4
+LITcomma:
+	; TODO: optimize small literals
+	push	lr
+	bl	LIT
+		dd	LIT
+	bl	CALLcomma
+	bl	COMMA ; add value
+	pop	lr
+	bx	lr
+
+name_semicolon:
+	dd	name_LITcomma ; link
 	db	(1 or word_immediate_flag),';' ; name
 	.align	4
 semicolon:
