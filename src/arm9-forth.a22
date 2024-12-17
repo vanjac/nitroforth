@@ -725,9 +725,19 @@ colon:
 	bl	rbrac
 	bl	EXIT
 
+; ( -- )
+name_BRANCH:
+	dd	name_colon ; link
+	db	6,'branch' ; name
+	.align	4
+BRANCH:
+	ldr	r0, [lr] ; offset
+	add	lr, lr, r0
+	bx	lr
+
 ; ( cond -- )
 name_0BRANCH:
-	dd	name_colon ; link
+	dd	name_BRANCH ; link
 	db	7,'0branch' ; name
 	.align	4
 0BRANCH:

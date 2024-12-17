@@ -13,6 +13,15 @@
 : 'branch ( offset -- instruction )
   4 - 6 lshift 8 rshift $EA000000 or ;
 
+: if immediate ( cond -- )
+  ' 0branch call, here @ 0 , ;
+
+: then immediate
+  dup here @ swap - swap ! ;
+
+: else immediate ( TODO: use 'branch single instruction? )
+  ' branch call, here @ 0 , swap dup here @ swap - swap ! ; 
+
 ( display initialize )
 
 ( set Engine A to mode 1 (graphics display) )
