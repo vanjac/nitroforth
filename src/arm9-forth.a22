@@ -478,9 +478,8 @@ WORD:
 
 @@find_non_blank:
 	bl	f_key
-	cmp	r0, ' '
-	cmpne	r0, 10 ; newline
-	beq	@@find_non_blank ; keep searching
+	cmp	r0, ' ' ; all control characters and space
+	bls	@@find_non_blank ; keep searching
 
 	add	r4, =@@word_buf
 @@append_loop:
@@ -488,8 +487,7 @@ WORD:
 	add	r4, r4, 1
 	bl	f_key
 	cmp	r0, ' '
-	cmpne	r0, 10 ; newline
-	bne	@@append_loop ; keep appending
+	bhi	@@append_loop ; keep appending
 
 	add	r0, =@@word_buf
 	stmfd	[r8]!, r0,r9
