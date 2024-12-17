@@ -23,7 +23,7 @@
   dup here @ swap - swap ! ;
 
 : else immediate ( TODO: use 'branch single instruction? )
-  ' branch call, here @ 0 , swap dup here @ swap - swap ! ; 
+  ' branch call, here @ 0 , swap [compile] then ; 
 
 : begin immediate
   here @ ;
@@ -31,11 +31,11 @@
 : until immediate
   ' 0branch call, here @ - , ;
 
-: while immediate ( cond -- ) ( TODO: same as if? )
-  ' 0branch call, here @ 0 , ;
+: while immediate ( cond -- )
+  [compile] if ;
 
 : repeat immediate
-  ' branch call, swap here @ - , dup here @ swap - swap ! ;
+  ' branch call, swap here @ - , [compile] then ;
 
 ( display initialize )
 
