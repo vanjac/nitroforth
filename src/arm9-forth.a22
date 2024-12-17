@@ -596,24 +596,9 @@ TYPE:
 	pop	lr
 	bx	lr
 
-; print number in hex
-; ( num -- )
-; TODO: convert to Forth
-name_Xdot:
-	dd	name_TYPE ; link
-	db	2,'x.' ; name
-	.align	4
-Xdot:
-	push	lr
-	mov	r0, r9
-	bl	f_print_u32_hex
-	ldmfd	[r8]!, r9
-	pop	lr
-	bx	lr
-
 ; ( addr len -- value unparsed )
 name_NUMBER:
-	dd	name_Xdot ; link
+	dd	name_TYPE ; link
 	db	6,'number' ; name
 	.align	4
 NUMBER:

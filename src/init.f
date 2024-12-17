@@ -44,11 +44,22 @@
 : char ( -- c )
   word drop c@ ;
 
-: ." ( -- ) ( TODO: make immediate! )
-  begin key dup [ char " lit, ] = if drop exit then emit again ;
+: [char] immediate
+  char lit, ;
 
 : cr ( -- )
   10 emit ;
+
+: ." ( -- ) ( TODO: make immediate! )
+  begin key dup [char] " = if drop exit then emit again ;
+
+: hexchar ( value -- char )
+  dup 9 > if [ char A 10 - lit, ] else [char] 0 then + ;
+
+: $. ( value -- )
+  8 begin
+    swap dup 28 rshift hexchar emit 4 lshift swap 1 - dup 0=
+  until drop drop ;
 
 ( display initialize )
 
