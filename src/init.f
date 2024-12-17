@@ -9,6 +9,9 @@
 : ' immediate ( -- ) ( TODO: only works when compiled )
   word find >cfa lit, ;
 
+: [compile] immediate
+  word find >cfa call, ;
+
 ( assemble a branch instruction )
 : 'branch ( offset -- instruction )
   4 - 6 lshift 8 rshift $EA000000 or ;
