@@ -20,10 +20,6 @@
 : [compile] immediate
   word find >cfa call, ;
 
-( to be used with 'does>'. exit call will be overwritten )
-: define
-  word create docol , ' exit call, ;
-
 : (does>) ( branch-addr -- )
   latest @ >cfa cell + swap over - 'call swap ! ;
 
@@ -32,8 +28,15 @@
   here @ 3 cells + lit, ' (does>) call, ' exit call,
   docol , ' r> call, ;
 
+( adds default behavior which can be replaced by 'does>' )
+: define
+  word create docol , 0 , does> ;
+
 : constant ( value -- )
   define , does> @ ;
+
+: variable ( -- )
+  define 0 , ;
 
 ( assemble a branch instruction )
 : 'branch ( offset -- instruction )
