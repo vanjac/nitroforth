@@ -1,12 +1,17 @@
-
+( TODO: these constants are duplicated in assembly )
 : f-immed
   $80 ;
 : docol
   $E92D4000 ;
 
+: cell
+  4 ;
+: cells
+  cell * ;
+
 ( make the most recently defined word immediate )
 : immediate ( -- )
-  latest @ 4 + dup c@ f-immed xor swap c! ;
+  latest @ cell + dup c@ f-immed xor swap c! ;
   immediate ( immediate is immediate! )
 
 : ' immediate ( -- ) ( TODO: only works when compiled )
@@ -15,15 +20,24 @@
 : [compile] immediate
   word find >cfa call, ;
 
-: doconst
-  r> @ ;
+( to be used with 'does>'. exit call will be overwritten )
+: define
+  word create docol , ' exit call, ;
+
+: (does>) ( branch-addr -- )
+  latest @ >cfa cell + swap over - 'call swap ! ;
+
+( word should be defined by 'define' instead of 'create' )
+: does> immediate
+  here @ 3 cells + lit, ' (does>) call, ' exit call,
+  docol , ' r> call, ;
 
 : constant ( value -- )
-  word create docol , ' doconst call, , ;
+  define , does> @ ;
 
 ( assemble a branch instruction )
 : 'branch ( offset -- instruction )
-  4 - 6 lshift 8 rshift $EA000000 or ;
+  cell - 6 lshift 8 rshift $EA000000 or ;
 
 : if immediate ( cond -- )
   ' 0branch call, here @ 0 , ;
