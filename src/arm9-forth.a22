@@ -28,44 +28,10 @@ var_return_stack_top:
 	dd	0
 
 start_forth:
-	push	r4
-
-	ldr	r8, =data_stack_top ; Set the data stack pointer
 	str	sp, [var_return_stack_top] ; Store the return stack top
-
-@@interp_loop:
-
-	bl	INTERPRET
-
-	; check for errors
-	ldr	r4, =data_stack_top
-	cmp	r8, r4
-	bls	@@no_data_underflow
-	bl	f_print_string_inline
-		db	10,'!! Data Underflow !!',10,0
-		.align	4
-	ldr	r8, =data_stack_top ; reset data stack
-@@no_data_underflow:
-	ldr	r4, [var_return_stack_top]
-	cmp	sp, r4
-	bls	@@no_return_underflow
-	bl	f_print_string_inline
-		db	10,'!! Return Underflow !!',10,0
-		.align	4
-@@no_return_underflow:
-	cmp	sp, r4
-	bhs	@@return_empty
-	bl	f_print_string_inline
-		db	10,'!! Return Not Empty !!',10,0
-		.align	4
-@@return_empty:
-	mov	sp, r4 ; reset return stack always
-	; end error check
-
-	b	@@interp_loop
+	b	quit_with_input
 
 ; Dictionary:
-
 
 ; ( a -- )
 name_DROP:
@@ -965,10 +931,60 @@ INTERPRET:
 	bl	LIT
 		dd	10 ; newline
 	bl	EMIT
-	bl	EXIT
+	b	QUIT
+
+name_QUIT:
+	dd	name_INTERPRET ; link
+	db	4,'quit' ; name
+	.align	4
+QUIT:
+	ldr	r0, [buftop]
+	str	r0, [curkey]
+quit_with_input:
+	ldr	r8, =data_stack_top        ; Set data stack
+	ldr	r9, =0xDEADBEEF
+	mov	r10, 0x04000000
+	ldr	sp, [var_return_stack_top] ; Set return stack
+	add	lr, =@@bad_return
+
+@@interp_loop:
+	bl	INTERPRET
+
+	; check for errors
+	ldr	r0, =data_stack_top
+	cmp	r8, r0
+	bhi	@@data_underflow
+	ldr	r0, [var_return_stack_top]
+	cmp	sp, r0
+	bhi	@@return_underflow
+	cmp	sp, r0
+	blo	@@return_not_empty
+
+	b	@@interp_loop
+
+@@data_underflow:
+	bl	f_print_string_inline
+		db	10,'!! Data Underflow !!',10,0
+		.align	4
+	b	QUIT
+@@return_underflow:
+	bl	f_print_string_inline
+		db	10,'!! Return Underflow !!',10,0
+		.align	4
+	b	QUIT
+@@return_not_empty:
+	bl	f_print_string_inline
+		db	10,'!! Return Not Empty !!',10,0
+		.align	4
+	b	QUIT
+@@bad_return:
+	bl	f_print_string_inline
+		db	10,'!! Bad Return !!',10,0
+		.align	4
+	b	QUIT
 
 name_comment:
-	dd	name_INTERPRET ; link
+	dd	name_QUIT ; link
 	db	(1 or word_immediate_flag),'(' ; name
 	.align	4
 comment:
