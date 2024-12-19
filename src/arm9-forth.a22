@@ -960,6 +960,14 @@ quit_with_input:
 	cmp	sp, r0
 	blo	@@return_not_empty
 
+	ldr	r0, [curkey]
+	ldr	r1, [buftop]
+	cmp	r0, r1
+	blo	@@interp_loop
+
+	bl	f_print_string_inline
+		db	' ok',10,0
+		.align	4
 	b	@@interp_loop
 
 @@data_underflow:
