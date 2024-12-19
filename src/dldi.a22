@@ -1,0 +1,26 @@
+	.align 0x40
+dldi_start:
+	db	0xED,0xA5,0x8D,0xBF ; ID
+	db	" Chishm",0
+	db	0,0,0,0x0F ; DLDI size: 32 kb
+	defs	0x30
+	dd	dldi_start ; ALL start
+	defs	(dldi_start + 0x68 - $)
+dldi_startup_addr:
+	dd	dldi_dummy
+dldi_inserted_addr:
+	dd	dldi_dummy
+dldi_read_addr:
+	dd	dldi_dummy
+dldi_write_addr:
+	dd	dldi_dummy
+dldi_reset_addr:
+	dd	dldi_dummy
+dldi_shutdown_addr:
+	dd	dldi_dummy
+dldi_dummy:
+	mov	r0, 0 ; fail
+	bx	lr
+
+	defs	(dldi_start + 0x8000 - $)
+dldi_end:

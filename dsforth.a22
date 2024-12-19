@@ -22,6 +22,7 @@ arm9_start:
 .include src\arm9-keyboard.a22
 .include src\font.a22
 .include src\arm9-forth.a22
+.include src\dldi.a22
 
 	.align	4
 input_buffer:
