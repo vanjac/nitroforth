@@ -3,7 +3,8 @@ dldi_start:
 	db	0xED,0xA5,0x8D,0xBF ; ID
 	db	" Chishm",0
 	db	0,0,0,0x0F ; DLDI size: 32 kb
-	defs	0x30
+	db	'(none)',0
+	defs	(dldi_start + 0x40 - $)
 	dd	dldi_start ; ALL start
 	defs	(dldi_start + 0x68 - $)
 dldi_startup_addr:

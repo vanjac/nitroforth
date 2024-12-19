@@ -586,16 +586,37 @@ name_TYPE:
 	db	4,'type' ; name
 	.align	4
 TYPE:
+	push	r4,lr
+	ldmfd	[r8]!, r4 ; string ptr
+	add	r9, r4, r9 ; string end
+@@loop:
+	ldrb	r0, [r4]
+	bl	f_print_char
+	add	r4, r4, 1
+	cmp	r4, r9
+	blt	@@loop
+
+	ldmfd	[r8]!, r9
+	pop	r4,lr
+	bx	lr
+
+; print a null-terminated string
+; ( addr -- null-addr )
+name_ZTYPE:
+	dd	name_TYPE ; link
+	db	5,'ztype' ; name
+	.align	4
+ZTYPE:
 	push	lr
-	mov	r1, r9
-	ldmfd	[r8]!, r0,r9
-	bl	f_print_string
+	mov	r0, r9
+	bl	f_print_string_null
+	mov	r9, r0
 	pop	lr
 	bx	lr
 
 ; ( addr len -- value unparsed )
 name_NUMBER:
-	dd	name_TYPE ; link
+	dd	name_ZTYPE ; link
 	db	6,'number' ; name
 	.align	4
 NUMBER:
@@ -876,6 +897,7 @@ semicolon:
 	bl	lbrac
 	bl	EXIT
 
+; ( ptr -- )
 name_EXECUTE:
 	dd	name_semicolon ; link
 	db	7,'execute' ; name
@@ -885,8 +907,57 @@ EXECUTE:
 	ldmfd	[r8]!, r9
 	bx	r0
 
-name_comment:
+; ( ptr -- result )
+name_C_CALL0:
 	dd	name_EXECUTE ; link
+	db	7,'c-call0' ; name
+	.align	4
+	b	C_CALL0
+
+; ( arg1 ptr -- result )
+name_C_CALL1:
+	dd	name_C_CALL0 ; link
+	db	7,'c-call1' ; name
+	.align	4
+	b	C_CALL1
+
+; ( arg1 arg2 ptr -- result )
+name_C_CALL2:
+	dd	name_C_CALL1 ; link
+	db	7,'c-call2' ; name
+	.align	4
+	b	C_CALL2
+
+; ( arg1 arg2 arg3 ptr -- result )
+name_C_CALL3:
+	dd	name_C_CALL2 ; link
+	db	7,'c-call3' ; name
+	.align	4
+	b	C_CALL3
+
+; ( arg1 arg2 arg3 arg4 ptr -- result )
+name_C_CALL4:
+	dd	name_C_CALL3 ; link
+	db	7,'c-call4' ; name
+	.align	4
+C_CALL4:
+	ldmfd	[r8]!, r3
+C_CALL3:
+	ldmfd	[r8]!, r2
+C_CALL2:
+	ldmfd	[r8]!, r1
+C_CALL1:
+	ldmfd	[r8]!, r0
+C_CALL0:
+	push	r4,lr
+	mov	r4, r9 ; fn pointer
+	blx	r4
+	mov	r9, r0
+	pop	r4,lr
+	bx	lr
+
+name_comment:
+	dd	name_C_CALL4 ; link
 	db	(1 or word_immediate_flag),'(' ; name
 	.align	4
 comment:
@@ -903,5 +974,14 @@ comment:
 	pop	r4,lr
 	bx	lr
 
-latest_word = name_comment
+name_DLDI:
+	dd	name_comment ; link
+	db	4,'dldi' ; name
+	.align	4
+DLDI:
+	stmfd	[r8]!, r9
+	add	r9, =dldi_start
+	bx	lr
+
+latest_word = name_DLDI
 .pool

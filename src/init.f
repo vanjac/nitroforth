@@ -106,3 +106,4 @@ $7F4D0000 palette-b $20 + !  ( input text )
 $0EFF0000 palette-b $200 + ! ( cursor )
 
 ." hello :3" cr
+." DLDI: " dldi $10 + ztype drop cr

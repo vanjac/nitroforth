@@ -91,22 +91,6 @@ f_print_char:
 	b	@@update_cursor
 
 ; r0: ptr
-; r1: size
-f_print_string:
-	push	r4-r5,lr
-	mov	r4, r0 ; string ptr
-	add	r5, r0, r1 ; string end
-@@loop:
-	ldrb	r0, [r4]
-	bl	f_print_char
-	add	r4, r4, 1
-	cmp	r4, r5
-	blt	@@loop
-
-	pop	r4-r5,lr
-	bx	lr
-
-; r0: ptr
 ; ---
 ; r0: end ptr
 f_print_string_null:
