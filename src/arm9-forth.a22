@@ -865,6 +865,7 @@ C_CALL0:
 	pop	r4,lr
 	bx	lr
 
+; loop until input buffer empty
 name_INTERPRET:
 	dd	name_C_CALL4 ; link
 	db	9,'interpret' ; name
@@ -872,6 +873,7 @@ name_INTERPRET:
 INTERPRET:
 	push	lr
 
+@@interp_loop:
 	bl	WORD
 	bl	OVER ; word ptr
 	bl	OVER ; word len
@@ -893,11 +895,11 @@ INTERPRET:
 
 	; compile word
 	bl	CALLcomma
-	bl	EXIT
+	b	@@interp_end
 
 @@execute:
 	bl	EXECUTE
-	bl	EXIT
+	b	@@interp_end
 
 @@not_in_dict:
 	bl	DROP ; found ptr (zero)
@@ -914,11 +916,11 @@ INTERPRET:
 
 	ldr	r0, [var_STATE]
 	cmp	r0, 0
-	bleq	EXIT
+	beq	@@interp_end
 
 	; compile literal
 	bl	LITcomma
-	bl	EXIT
+	b	@@interp_end
 
 @@not_number:
 	bl	DROP
@@ -933,42 +935,24 @@ INTERPRET:
 	bl	EMIT
 	b	QUIT
 
-name_QUIT:
-	dd	name_INTERPRET ; link
-	db	4,'quit' ; name
-	.align	4
-QUIT:
-	ldr	r0, [buftop]
-	str	r0, [curkey]
-quit_with_input:
-	ldr	r8, =data_stack_top        ; Set data stack
-	ldr	r9, =0xDEADBEEF
-	mov	r10, 0x04000000
-	ldr	sp, [var_return_stack_top] ; Set return stack
-	add	lr, =@@bad_return
-
-@@interp_loop:
-	bl	INTERPRET
+@@interp_end:
+	ldr	r0, [curkey] ; TODO: add a 'key?' word
+	ldr	r1, [buftop]
+	cmp	r0, r1
+	blo	@@interp_loop
 
 	; check for errors
 	ldr	r0, =data_stack_top
 	cmp	r8, r0
 	bhi	@@data_underflow
 	ldr	r0, [var_return_stack_top]
+	sub	r0, 8 ; stack should be two words deep here
 	cmp	sp, r0
 	bhi	@@return_underflow
 	cmp	sp, r0
 	blo	@@return_not_empty
 
-	ldr	r0, [curkey]
-	ldr	r1, [buftop]
-	cmp	r0, r1
-	blo	@@interp_loop
-
-	bl	f_print_string_inline
-		db	' ok',10,0
-		.align	4
-	b	@@interp_loop
+	bl	EXIT
 
 @@data_underflow:
 	bl	f_print_string_inline
@@ -985,6 +969,29 @@ quit_with_input:
 		db	10,'!! Return Not Empty !!',10,0
 		.align	4
 	b	QUIT
+
+name_QUIT:
+	dd	name_INTERPRET ; link
+	db	4,'quit' ; name
+	.align	4
+QUIT:
+	ldr	r0, [buftop]
+	str	r0, [curkey]
+quit_with_input:
+	ldr	r8, =data_stack_top        ; Set data stack
+	ldr	r9, =0xDEADBEEF
+	mov	r10, 0x04000000
+	ldr	sp, [var_return_stack_top] ; Set return stack
+	add	r0, =@@bad_return
+	push	r0
+
+@@interp_loop:
+	bl	INTERPRET
+	bl	f_print_string_inline
+		db	' ok',10,0
+		.align	4
+	b	@@interp_loop
+
 @@bad_return:
 	bl	f_print_string_inline
 		db	10,'!! Bad Return !!',10,0
