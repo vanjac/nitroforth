@@ -35,6 +35,8 @@ start_forth:
 
 @@interp_loop:
 
+	bl	INTERPRET
+
 	; check for errors
 	ldr	r4, =data_stack_top
 	cmp	r8, r4
@@ -60,65 +62,6 @@ start_forth:
 	mov	sp, r4 ; reset return stack always
 	; end error check
 
-	bl	WORD
-	bl	OVER ; word ptr
-	bl	OVER ; word len
-	bl	FIND
-	cmp	r9, 0
-	beq	@@not_in_dict
-
-	bl	NIP ; word ptr
-	bl	NIP ; word len
-	ldrb	r4, [r9, 4]
-	bl	toCFA
-	tst	r4, word_immediate_flag
-	bne	@@execute
-	ldr	r0, [var_STATE]
-	cmp	r0, 0
-	beq	@@execute
-
-	; compile word
-	bl	CALLcomma
-	b	@@interp_loop
-
-@@execute:
-	bl	EXECUTE
-
-	b	@@interp_loop
-
-@@not_in_dict:
-	bl	DROP ; found ptr (zero)
-
-	bl	OVER ; word ptr
-	bl	OVER ; word len
-	bl	NUMBER
-	cmp	r9, 0
-	bne	@@not_number
-
-	bl	DROP ; uncoverted chars (zero)
-	bl	NIP ; word ptr
-	bl	NIP ; word len
-
-	ldr	r0, [var_STATE]
-	cmp	r0, 0
-	beq	@@interp_loop
-
-	; compile literal
-	bl	LITcomma
-
-	b	@@interp_loop
-
-@@not_number:
-	bl	DROP
-	bl	DROP
-
-	bl	TYPE
-	bl	LIT
-		dd	'?'
-	bl	EMIT
-	bl	LIT
-		dd	10 ; newline
-	bl	EMIT
 	b	@@interp_loop
 
 ; Dictionary:
@@ -956,8 +899,76 @@ C_CALL0:
 	pop	r4,lr
 	bx	lr
 
-name_comment:
+name_INTERPRET:
 	dd	name_C_CALL4 ; link
+	db	9,'interpret' ; name
+	.align	4
+INTERPRET:
+	push	lr
+
+	bl	WORD
+	bl	OVER ; word ptr
+	bl	OVER ; word len
+	bl	FIND
+	cmp	r9, 0
+	beq	@@not_in_dict
+
+	bl	NIP ; word ptr
+	bl	NIP ; word len
+	ldrb	r0, [r9, 4]
+	push	r0
+	bl	toCFA
+	pop	r0
+	tst	r0, word_immediate_flag
+	bne	@@execute
+	ldr	r0, [var_STATE]
+	cmp	r0, 0
+	beq	@@execute
+
+	; compile word
+	bl	CALLcomma
+	bl	EXIT
+
+@@execute:
+	bl	EXECUTE
+	bl	EXIT
+
+@@not_in_dict:
+	bl	DROP ; found ptr (zero)
+
+	bl	OVER ; word ptr
+	bl	OVER ; word len
+	bl	NUMBER
+	cmp	r9, 0
+	bne	@@not_number
+
+	bl	DROP ; uncoverted chars (zero)
+	bl	NIP ; word ptr
+	bl	NIP ; word len
+
+	ldr	r0, [var_STATE]
+	cmp	r0, 0
+	bleq	EXIT
+
+	; compile literal
+	bl	LITcomma
+	bl	EXIT
+
+@@not_number:
+	bl	DROP
+	bl	DROP
+
+	bl	TYPE
+	bl	LIT
+		dd	'?'
+	bl	EMIT
+	bl	LIT
+		dd	10 ; newline
+	bl	EMIT
+	bl	EXIT
+
+name_comment:
+	dd	name_INTERPRET ; link
 	db	(1 or word_immediate_flag),'(' ; name
 	.align	4
 comment:
