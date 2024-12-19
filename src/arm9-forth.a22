@@ -82,10 +82,7 @@ start_forth:
 	b	@@interp_loop
 
 @@execute:
-	; call
-	mov	r0, r9
-	ldmfd	[r8]!, r9 ; drop
-	blx	r0
+	bl	EXECUTE
 
 	b	@@interp_loop
 
@@ -879,8 +876,17 @@ semicolon:
 	bl	lbrac
 	bl	EXIT
 
-name_comment:
+name_EXECUTE:
 	dd	name_semicolon ; link
+	db	7,'execute' ; name
+	.align	4
+EXECUTE:
+	mov	r0, r9
+	ldmfd	[r8]!, r9
+	bx	r0
+
+name_comment:
+	dd	name_EXECUTE ; link
 	db	(1 or word_immediate_flag),'(' ; name
 	.align	4
 comment:

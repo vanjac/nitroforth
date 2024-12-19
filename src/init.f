@@ -93,7 +93,7 @@
 
 ( set Engine A to mode 1 (graphics display) )
 $00010000 $04000000 ! ( DISPCNT A )
-( set Engine B to mode 1 (graphics display). enable BG0+OBJ )
+( set Engine B to mode 1. enable BG0+OBJ )
 $00011100 $04001000 ! ( DISPCNT B )
 ( enable BG0 )
     $0400 $04001008 ! ( BG0CNT )
