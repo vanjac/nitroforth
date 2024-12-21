@@ -37,6 +37,7 @@ arm7_entry:
 	mov	r1, 0x1 ; enable V-Blank interrupt
 	str	r1, [r10, 0x210] ; IE
 
+	mvn	r7, 0 ; prev KEYINPUT/KEYCNT
 	mvn	r6, 0 ; prev RCNT/EXTKEYIN
 
 arm7_halt_loop:
@@ -46,10 +47,20 @@ arm7_halt_loop:
 	ldr	r1, [r10, 0x214] ; IF
 	str	r1, [r10, 0x214] ; IF
 
+	ldr	r2, [r10, 0x130] ; KEYINPUT
 	ldr	r1, [r10, 0x134] ; RCNT/EXTKEYIN
+
+	tst	r7, 0xC ; debug key WAS pressed
+	mov	r7, r2  ; Update prev values
+	beq	arm7_halt_loop
+
 	tst	r6, 0x400000 ; Pen WAS down
 	mov	r6, r1       ; Update prev values
 	beq	arm7_halt_loop ; was pressed
+
+	tst	r7, 0xC ; debug key IS pressed
+	beq	@@debug_key
+
 	tst	r6, 0x400000 ; Pen IS down
 	bne	arm7_halt_loop ; not pressed
 
@@ -100,6 +111,14 @@ arm7_halt_loop:
 	str	r1, [r10, 0x480] ; SOUND8CNT
 	ldr	r0, =0x100000
 	swi	0x30000 ; WaitByLoop
+
+	b	arm7_halt_loop
+
+@@debug_key:
+	mov	r1, 0x2000 ; send IRQ
+	str	r1, [r10, 0x180] ; IPCSYNC
+	mov	r1, 0
+	str	r1, [r10, 0x180] ; IPCSYNC
 
 	b	arm7_halt_loop
 

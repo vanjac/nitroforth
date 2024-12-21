@@ -54,8 +54,10 @@ f_setup_interrupts:
 
 	mov	r0, 0x8400 ; enable IPC Recv IRQ
 	str	r0, [r10, 0x184] ; IPCFIFOCNT
+	mov	r0, 0x4000 ; enable IPC Sync IRQ
+	str	r0, [r10, 0x180] ; IPCSYNC
 
-	mov	r1, 0x40000 ; enable IPC Recv interrupt
+	mov	r1, 0x50000 ; enable IPC Recv, IPC Sync
 	str	r1, [r10, 0x210] ; IE
 
 	mvn	r1, 0
@@ -75,6 +77,8 @@ arm9_intr_handle:
 	; acknowledge interrupt
 	ldr	r1, [r10, 0x214] ; IF
 	str	r1, [r10, 0x214] ; IF
+	tst	r1, 0x10000 ; IPC Sync
+	bne	arm9_debug_handle
 
 	bx	lr
 
