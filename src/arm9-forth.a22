@@ -1,5 +1,3 @@
-data_stack_top = (dtcm_loc + 0x2000)
-
 word_length_mask = 0x1F
 word_length_bits = 5
 word_hidden_flag = 0x20
@@ -24,6 +22,8 @@ word_immediate_flag = 0x80
 ; r14:	Link Register
 ; r15:	Program Counter
 
+var_data_stack_top:
+	dd	(dtcm_loc + 0x2000)
 var_return_stack_top:
 	dd	0
 
@@ -354,7 +354,7 @@ HERE:
 	add	r9, =var_HERE
 	bx	lr
 var_HERE:
-	dd	arm9_end ; TODO
+	dd	arm9_end
 
 name_LATEST:
 	dd	name_HERE ; link
@@ -365,10 +365,29 @@ LATEST:
 	add	r9, =var_LATEST
 	bx	lr
 var_LATEST:
-	dd	latest_word ; TODO
+	dd	latest_word
+
+name_S0:
+	dd	name_LATEST ; link
+	db	2,'s0' ; name
+	.align	4
+S0:
+	stmfd	[r8]!, r9
+	add	r9, =var_data_stack_top
+	bx	lr
+
+name_DSPfetch:
+	dd	name_S0 ; link
+	db	4,'dsp@' ; name
+	.align	4
+DSPfetch:
+	stmfd	[r8], r9
+	mov	r9, r8
+	sub	r8, r8, 4
+	bx	lr
 
 name_Rpush:
-	dd	name_LATEST ; link
+	dd	name_DSPfetch ; link
 	db	2,'>r' ; name
 	.align	4
 Rpush:
@@ -942,7 +961,7 @@ INTERPRET:
 	blo	@@interp_loop
 
 	; check for errors
-	ldr	r0, =data_stack_top
+	ldr	r0, [var_data_stack_top]
 	cmp	r8, r0
 	bhi	@@data_underflow
 	ldr	r0, [var_return_stack_top]
@@ -978,7 +997,7 @@ QUIT:
 	ldr	r0, [buftop]
 	str	r0, [curkey]
 quit_with_input:
-	ldr	r8, =data_stack_top        ; Set data stack
+	ldr	r8, [var_data_stack_top]   ; Set data stack
 	ldr	r9, =0xDEADBEEF
 	mov	r10, 0x04000000
 	ldr	sp, [var_return_stack_top] ; Set return stack

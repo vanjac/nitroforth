@@ -101,6 +101,10 @@
 
 ( debugging tools )
 
+: $.s ( -- )
+  s0 @ 4 - dsp@ ( top cur )
+  begin over over > while dup @ $. 4 + repeat drop drop ;
+
 : (dump1) ( addr -- )
   dup $7 and 0= if dup $. else space then c@ $c. ;
 
