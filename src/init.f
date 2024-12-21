@@ -14,7 +14,7 @@
   latest @ cell + dup c@ f-immed xor swap c! ;
   immediate ( immediate is immediate! )
 
-: ' immediate ( -- ) ( TODO: only works when compiled )
+: ' immediate ( -- )
   word find >cfa lit, ;
 
 : [compile] immediate
@@ -49,7 +49,11 @@
   dup here @ swap - swap ! ;
 
 : else immediate ( TODO: use 'branch single instruction? )
-  ' branch call, here @ 0 , swap [compile] then ; 
+  ' branch call, here @ 0 , swap [compile] then ;
+
+( new definition which supports interpret mode )
+: ' immediate ( -- )
+  word find >cfa state @ if lit, then ;
 
 : begin immediate
   here @ ;
@@ -65,6 +69,9 @@
 
 : again immediate
   ' branch call, here @ - , ;
+
+: is ( cfa -- )
+  word find >cfa swap over - cell - 'branch swap ! ;
 
 : char ( -- c )
   word drop c@ ;

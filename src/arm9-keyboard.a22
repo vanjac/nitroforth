@@ -52,7 +52,7 @@ f_await_keypress:
 	ldr	r0, [r10, 0x184] ; IPCFIFOCNT
 	tst	r0, 0x100 ; FIFO empty
 
-	swine	0x60000
+	bne	@@wait_for_interrupt
 
 	mov	r0, 0x04100000
 	ldr	r0, [r0]
@@ -70,6 +70,10 @@ f_await_keypress:
 
 	pop	lr
 	bx	lr
+
+@@wait_for_interrupt:
+	swi	0x60000
+	b	@@await_loop
 
 @@keyboard_shift:
 	str	r1, [keyboard_ptr]
