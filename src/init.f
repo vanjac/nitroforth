@@ -96,6 +96,18 @@
     swap dup 28 rshift hexchar emit 4 lshift swap 1 - dup 0=
   until drop drop space ;
 
+: $c. ( value -- )
+  $FF and dup 4 rshift hexchar emit $F and hexchar emit ;
+
+( debugging tools )
+
+: (dump1) ( addr -- )
+  dup $7 and 0= if dup $. else space then c@ $c. ;
+
+: dump ( addr len -- end-addr )
+  over + swap ( end-addr cur-addr )
+  begin over over > while dup (dump1) 1 + repeat drop ;
+
 ( display initialize )
 
 ( set Engine A to mode 1 (graphics display) )
