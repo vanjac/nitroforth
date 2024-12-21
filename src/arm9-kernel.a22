@@ -13,18 +13,7 @@ arm9_entry2:
 	mov	p15,0,c9,c1,0, r0 ; DTCM
 	; End normalized initialization
 
-	ldr	r0, =0x027FFD9C ; Debug Vector
-	add	r1, =arm9_debug_handle
-	str	r1, [r0]
-
-	mov	r0, p15,0,c1,c0,0 ; CP15 Control Register
-	orr	r0, 0x1           ; Enable Protection Unit
-	mov	p15,0,c1,c0,0, r0
-
-	; Disable PU region 2
-	; TODO: set other PU regions
-	mov	r0, 0 ; disabled
-	mov	p15,0,c6,c2,0, r0
+	bl	f_setup_debugging
 
 	; TODO: enable data / instruction cache
 
@@ -38,6 +27,27 @@ arm9_entry2:
 	bl	f_init_term_out
 	bl	f_render_keyboard
 
+	bl	f_setup_interrupts
+
+	b	start_forth
+
+f_setup_debugging:
+	ldr	r0, =0x027FFD9C ; Debug Vector
+	add	r1, =arm9_debug_handle
+	str	r1, [r0]
+
+	mov	r0, p15,0,c1,c0,0 ; CP15 Control Register
+	orr	r0, 0x1           ; Enable Protection Unit
+	mov	p15,0,c1,c0,0, r0
+
+	; Disable PU region 2
+	; TODO: set other PU regions
+	mov	r0, 0 ; disabled
+	mov	p15,0,c6,c2,0, r0
+
+	bx	lr
+
+f_setup_interrupts:
 	ldr	r0, =(dtcm_loc + 0x3FFC) ; IRQ vector
 	add	r1, =arm9_intr_handle
 	str	r1, [r0]
@@ -58,7 +68,7 @@ arm9_entry2:
 	bic  r0, r0, 0x80
 	mov  cpsr, r0
 
-	b	start_forth
+	bx	lr
 
 ; r0-r3 are pushed by BIOS
 arm9_intr_handle:
@@ -128,12 +138,7 @@ f_calc_touchscreen_pos:
 	bx	lr
 
 arm9_debug_handle:
-	mov	r10, 0x04000000
-
-	; Disable interrupts
-	mov	r1, 0
-	str	r1, [r10, 0x210] ; IE
-	str	r1, [r10, 0x208] ; IME
+	push	r0-r3
 
 	bl	f_print_string_inline
 		db	10,'CRASH! at ',0
@@ -141,8 +146,95 @@ arm9_debug_handle:
 
 	ldr	r0, =0x027FFD98
 	ldr	r0, [r0]
+	sub	r0, r0, 4
 	bl	f_print_u32_hex
 
-	swi	0x60000 ; halt
+	bl	f_print_string_inline
+		db	10,'r0  ',0
+		.align	4
+	pop	r0
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  r1  ',0
+		.align	4
+	pop	r0
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,'r2  ',0
+		.align	4
+	pop	r0
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  r3  ',0
+		.align	4
+	pop	r0
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,'r4  ',0
+		.align	4
+	mov	r0, r4
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  r5  ',0
+		.align	4
+	mov	r0, r5
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,'r6  ',0
+		.align	4
+	mov	r0, r6
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  r7  ',0
+		.align	4
+	mov	r0, r7
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,'r8  ',0
+		.align	4
+	mov	r0, r8
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  r9  ',0
+		.align	4
+	mov	r0, r9
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,'r10 ',0
+		.align	4
+	mov	r0, r10
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  r11 ',0
+		.align	4
+	mov	r0, r11
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,'sp  ',0
+		.align	4
+
+	; switch to user mode
+	mov	r0, cpsr
+	orr	r0, r0, 0x1F
+	mov	cpsr, r0
+
+	mov	r0, r13
+	mov	r4, r14
+	ldr	sp, [var_return_stack_top]
+
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	'  lr  ',0
+		.align	4
+	mov	r0, r4
+	bl	f_print_u32_hex
+	bl	f_print_string_inline
+		db	10,0
+		.align	4
+
+	bl	f_setup_debugging
+	bl	f_setup_interrupts
+
+	b	QUIT
 
 .pool
