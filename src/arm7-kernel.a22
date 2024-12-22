@@ -37,8 +37,7 @@ arm7_entry:
 	mov	r1, 0x1 ; enable V-Blank interrupt
 	str	r1, [r10, 0x210] ; IE
 
-	mvn	r7, 0 ; prev KEYINPUT/KEYCNT
-	mvn	r6, 0 ; prev RCNT/EXTKEYIN
+	mvn	r6, 0 ; prev keys ( KEYINPUT/EXTKEYIN )
 
 arm7_halt_loop:
 	swi	0x60000 ; halt
@@ -47,18 +46,18 @@ arm7_halt_loop:
 	ldr	r1, [r10, 0x214] ; IF
 	str	r1, [r10, 0x214] ; IF
 
-	ldr	r2, [r10, 0x130] ; KEYINPUT
-	ldr	r1, [r10, 0x134] ; RCNT/EXTKEYIN
+	; get key input
+	ldr	r1, =0x04000130
+	ldrh	r2, [r1]    ; KEYINPUT
+	ldrh	r3, [r1, 6] ; EXTKEYIN
+	orr	r2, r2, r3, LSL#16
 
-	tst	r7, 0xC ; debug key WAS pressed
-	mov	r7, r2  ; Update prev values
-	beq	arm7_halt_loop
+	tst	r6, 0xC        ; debug key WAS pressed
+	tstne	r6, 0x400000   ; Pen WAS down
+	mov	r6, r2         ; Update prev values
+	beq	arm7_halt_loop ; wait until released
 
-	tst	r6, 0x400000 ; Pen WAS down
-	mov	r6, r1       ; Update prev values
-	beq	arm7_halt_loop ; was pressed
-
-	tst	r7, 0xC ; debug key IS pressed
+	tst	r6, 0xC ; debug key IS pressed
 	beq	@@debug_key
 
 	tst	r6, 0x400000 ; Pen IS down
