@@ -148,7 +148,7 @@ arm9_debug_handle:
 		db	10,'CRASH! at ',0
 		.align	4
 
-	ldr	r0, =0x027FFD98
+	ldr	r0, =0x027FFD98 ; TODO: wrong for debug key
 	ldr	r0, [r0]
 	sub	r0, r0, 4
 	bl	f_print_u32_hex

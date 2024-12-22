@@ -128,6 +128,11 @@ $54DF480B palette-b !        ( output text, background )
 $7F4D0000 palette-b $20 + !  ( input text )
 $0EFF0000 palette-b $200 + ! ( cursor )
 
+( dldi initialize )
+
+( set GBA/NDS slot access to ARM9 )
+$4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
+
 ." DLDI: " dldi $10 + ztype drop cr
 $.s
 
