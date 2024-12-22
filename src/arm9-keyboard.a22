@@ -56,6 +56,17 @@ f_await_keypress:
 
 	mov	r0, 0x04100000 ; IPC Receive FIFO
 	ldr	r0, [r0]
+
+	; L/R buttons shift keyboard
+	cmp	r0, 0x10000008
+	cmpne	r0, 0x10000009
+	addeq	r1, =keyboard_shifted
+	beq	@@keyboard_shift
+	cmp	r0, 0x20000008
+	cmpne	r0, 0x20000009
+	addeq	r1, =keyboard
+	beq	@@keyboard_shift
+
 	mov	r1, r0, LSR#28 ; command
 	cmp	r1, 0 ; pen down command
 	bne	@@await_loop
