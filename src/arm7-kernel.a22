@@ -37,7 +37,7 @@ arm7_entry:
 	mov	r1, 0x1 ; enable V-Blank interrupt
 	str	r1, [r10, 0x210] ; IE
 
-	mvn	r6, 0 ; prev keys ( KEYINPUT/EXTKEYIN )
+	ldr	r6, =0x7F03FF ; prev keys ( KEYINPUT/EXTKEYIN )
 
 arm7_halt_loop:
 	swi	0x60000 ; halt
@@ -51,6 +51,30 @@ arm7_halt_loop:
 	ldrh	r2, [r1]    ; KEYINPUT
 	ldrh	r3, [r1, 6] ; EXTKEYIN
 	orr	r2, r2, r3, LSL#16
+
+	mov	r3, 17 ; button # (start with Y)
+	mov	r0, 1  ; mask
+@@button_test_loop:
+	ands	r1, r0, r6, LSR r3
+	beq	@@button_was_pressed
+	ands	r1, r0, r2, LSR r3
+	bne	@@button_test_continue ; is not pressed
+	; button has been pressed
+	orr	r1, r3, 0x10000000
+	str	r1, [r10, 0x188] ; IPCFIFOSEND
+	b	@@button_test_continue
+
+@@button_was_pressed:
+	ands	r1, r0, r2, LSR r3
+	beq	@@button_test_continue ; is pressed
+	; button has been released
+	orr	r1, r3, 0x20000000
+	str	r1, [r10, 0x188] ; IPCFIFOSEND
+@@button_test_continue:
+	subs	r3, r3, 1
+	bge	@@button_test_loop
+
+	; special input handling:
 
 	tst	r6, 0xC        ; debug key WAS pressed
 	tstne	r6, 0x400000   ; Pen WAS down

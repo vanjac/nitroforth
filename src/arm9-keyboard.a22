@@ -54,8 +54,11 @@ f_await_keypress:
 
 	bne	@@wait_for_interrupt
 
-	mov	r0, 0x04100000
+	mov	r0, 0x04100000 ; IPC Receive FIFO
 	ldr	r0, [r0]
+	mov	r1, r0, LSR#28 ; command
+	cmp	r1, 0 ; pen down command
+	bne	@@await_loop
 
 	bl	f_calc_touchscreen_pos
 	bl	f_get_key
