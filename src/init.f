@@ -32,6 +32,9 @@
 : define
   word create docol , 0 , does> ;
 
+: allot ( size -- )
+  here @ + here ! ;
+
 : constant ( value -- )
   define , does> @ ;
 
