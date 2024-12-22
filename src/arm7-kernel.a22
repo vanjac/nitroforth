@@ -83,10 +83,11 @@ arm7_halt_loop:
 	; TODO: filter out noise! see GBATEK "Touchscreen Notes"
 
 	; Disable Chipselect Hold
-	mov	r6, 0
 	ldr	r1, =0x8201
 	strh	r1, [r0]
-	strb	r6, [r0, 2]
+	; Send final value
+	mov	r1, 0
+	strb	r1, [r0, 2]
 	; Disable SPI bus
 	mov	r1, 0
 	strh	r1, [r0]
@@ -114,9 +115,9 @@ arm7_halt_loop:
 	b	arm7_halt_loop
 
 @@debug_key:
-	ldr	r1, =0x8008 ; flush FIFO
+	ldr	r1, =0x8008      ; flush FIFO
 	str	r1, [r10, 0x184] ; IPCFIFOCNT
-	mov	r1, 0x2000 ; send IRQ
+	mov	r1, 0x2000       ; send IRQ
 	str	r1, [r10, 0x180] ; IPCSYNC
 	mov	r1, 0
 	str	r1, [r10, 0x180] ; IPCSYNC
