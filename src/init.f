@@ -128,12 +128,33 @@ $54DF480B palette-b !        ( output text, background )
 $7F4D0000 palette-b $20 + !  ( input text )
 $0EFF0000 palette-b $200 + ! ( cursor )
 
-( dldi initialize )
+( DLDI )
+
+: dldi-init ( -- status )
+  dldi $68 + @ c-call0 ;
+
+: dldi-inserted ( -- inserted )
+  dldi $6C + @ c-call0 ;
+
+: dldi-read ( sector numsectors buf -- status )
+  dldi $70 + @ c-call3 ;
+
+: dldi-write ( sector numsectors buf -- status )
+  dldi $74 + @ c-call3 ;
+
+: dldi-reset ( -- status )
+  dldi $78 + @ c-call0 ;
+
+: dldi-shutdown ( -- status )
+  dldi $7C + @ c-call0 ;
 
 ( set GBA/NDS slot access to ARM9 )
 $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 
 ." DLDI: " dldi $10 + ztype drop cr
+
+( welcome )
+
 $.s
 
 cr ." hi :3" cr
