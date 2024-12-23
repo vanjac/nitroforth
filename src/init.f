@@ -24,6 +24,8 @@ $0EFF0000 palette-b $200 + ! ( cursor )
   4 ;
 : cells
   cell * ;
+: /cell
+  2 rshift ;
 
 : / ( a b -- a/b )
   /mod swap drop ;
@@ -163,9 +165,7 @@ cell 1 - invert constant cellmask
   dup 9 > if [ char A 10 - lit, ] else [char] 0 then + ;
 
 : $. ( value -- )
-  8 begin
-    swap dup 28 rshift hexchar emit 4 lshift swap 1 - dup 0=
-  until drop drop space ;
+  8 for dup 28 rshift hexchar emit 4 lshift next drop space ;
 
 : $c. ( value -- )
   $FF and dup 4 rshift hexchar emit $F and hexchar emit ;
@@ -173,15 +173,14 @@ cell 1 - invert constant cellmask
 ( debugging tools )
 
 : $.s ( -- )
-  s0 @ 4 - dsp@ ( top cur )
-  begin over over > while dup @ $. 4 + repeat drop drop ;
+  s0 @ cell - dsp@ ( top cur )
+  begin over over > while dup @ $. cell + repeat drop drop ;
 
 : (dump1) ( addr -- )
   dup $7 and 0= if dup $. else space then c@ $c. ;
 
 : dump ( addr len -- end-addr )
-  over + swap ( end-addr cur-addr )
-  begin over over > while dup (dump1) 1 + repeat drop ;
+  for dup (dump1) 1 + next ;
 
 ( DLDI )
 
