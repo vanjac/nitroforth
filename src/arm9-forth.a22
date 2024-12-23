@@ -109,7 +109,6 @@ times:
 	mul	r9, r0, r9
 	bx	lr
 
-; TODO: replace with /MOD
 ; ( a b -- a/b )
 name_divMOD:
 	dd	name_times ; link
