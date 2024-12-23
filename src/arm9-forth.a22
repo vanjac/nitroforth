@@ -659,6 +659,8 @@ name_toCFA:
 	db	4,'>cfa' ; name
 	.align	4
 toCFA:
+	cmp	r9, 0
+	beq	@@fail
 	add	r9, r9, 4
 	ldrb	r0, [r9] ; word length / flags
 	mov	r0, r0, LSL#(32 - word_length_bits)
@@ -667,6 +669,11 @@ toCFA:
 	add	r9, r9, 4   ; skip length, padding
 	bic	r9, r9, 0x3 ; align
 	bx	lr
+@@fail:
+	bl	f_print_string_inline
+		db	'No word!',0
+		.align	4
+	b	QUIT
 
 ; ( addr len -- )
 name_CREATE:
