@@ -673,7 +673,7 @@ toCFA:
 	bl	f_print_string_inline
 		db	'No word!',0
 		.align	4
-	b	QUIT
+	b	QUIT ; abort
 
 ; ( addr len -- )
 name_CREATE:
@@ -752,10 +752,13 @@ HIDDEN:
 
 name_colon:
 	dd	name_HIDDEN ; link
-	db	1,':' ; name
+	db	(1 or word_immediate_flag),':' ; name
 	.align	4
 colon:
 	push	lr
+	ldr	r0, [var_STATE]
+	cmp	r0, 1
+	beq	@@fail
 	bl	WORD
 	bl	CREATE
 	bl	LIT
@@ -766,6 +769,11 @@ colon:
 	bl	HIDDEN
 	bl	rbrac
 	bl	EXIT
+@@fail:
+	bl	f_print_string_inline
+		db	"Missing semicolon?",0
+		.align	4
+	b	QUIT ; abort
 
 ; ( -- )
 name_BRANCH:
@@ -976,7 +984,7 @@ INTERPRET:
 	bl	LIT
 		dd	'?'
 	bl	EMIT
-	b	QUIT
+	b	QUIT ; abort
 
 @@interp_end:
 	ldr	r0, [curkey] ; TODO: add a 'key?' word
@@ -1001,17 +1009,17 @@ INTERPRET:
 	bl	f_print_string_inline
 		db	10,'!! Data Underflow !!',0
 		.align	4
-	b	QUIT
+	b	QUIT ; abort
 @@return_underflow:
 	bl	f_print_string_inline
 		db	10,'!! Return Underflow !!',0
 		.align	4
-	b	QUIT
+	b	QUIT ; abort
 @@return_not_empty:
 	bl	f_print_string_inline
 		db	10,'!! Return Not Empty !!',0
 		.align	4
-	b	QUIT
+	b	QUIT ; abort
 
 name_QUIT:
 	dd	name_INTERPRET ; link
@@ -1041,7 +1049,7 @@ quit_with_input:
 	bl	f_print_string_inline
 		db	10,'!! Bad Return !!',0
 		.align	4
-	b	QUIT
+	b	QUIT ; abort
 
 name_comment:
 	dd	name_QUIT ; link
