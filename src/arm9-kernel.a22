@@ -86,7 +86,8 @@ arm9_intr_handle:
 ; r1: denominator
 ; ---
 ; r0: quotient
-f_arm9_divide_32:
+; r1: remainder
+f_arm9_divmod_32:
 	mov	r2, 0 ; mode 0 (32-bit)
 	str	r2, [r10, 0x280]
 	str	r0, [r10, 0x290]
@@ -97,6 +98,7 @@ f_arm9_divide_32:
 	bne	@@busy_loop
 
 	ldr	r0, [r10, 0x2A0]
+	ldr	r1, [r10, 0x2A8]
 	bx	lr
 
 ; r0: ADC X/Y values
@@ -119,7 +121,7 @@ f_calc_touchscreen_pos:
 	sub	r7, r7, r6 ; (scr.x2 - scr.x1)
 	mul	r0, r0, r7 ; (adc.x - adc.x1) * (scr.x2 - scr.x1)
 	sub	r1, r1, r5 ; (adc.x2 - adc.x1)
-	bl	f_arm9_divide_32
+	bl	f_arm9_divmod_32
 	add	r9, r0, r6
 	sub	r9, r9, 1  ; scr.x
 
@@ -132,7 +134,7 @@ f_calc_touchscreen_pos:
 	sub	r7, r7, r6 ; (scr.y2 - scr.y1)
 	mul	r0, r0, r7 ; (adc.y - adc.y1) * (scr.y2 - scr.y1)
 	sub	r1, r1, r5 ; (adc.y2 - adc.y1)
-	bl	f_arm9_divide_32
+	bl	f_arm9_divmod_32
 	add	r1, r0, r6
 	sub	r1, r1, 1 ; scr.y
 

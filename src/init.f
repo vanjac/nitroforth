@@ -9,6 +9,12 @@
 : cells
   cell * ;
 
+: / ( a b -- a/b )
+  /mod swap drop ;
+
+: mod ( a b -- a%b )
+  /mod drop ;
+
 ( make the most recently defined word immediate )
 : immediate ( -- )
   latest @ cell + dup c@ f-immed xor swap c! ;

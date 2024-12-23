@@ -111,22 +111,23 @@ times:
 
 ; TODO: replace with /MOD
 ; ( a b -- a/b )
-name_divide:
+name_divMOD:
 	dd	name_times ; link
-	db	1,'/' ; name
+	db	4,'/mod' ; name
 	.align	4
-divide:
+divMOD:
 	push	lr
-	ldmfd	[r8]!, r0
+	ldr	r0, [r8]
 	mov	r1, r9
-	bl	f_arm9_divide_32
+	bl	f_arm9_divmod_32
 	mov	r9, r0
+	str	r1, [r8]
 	pop	lr
 	bx	lr
 
 ; ( a -- -a )
 name_NEGATE:
-	dd	name_divide ; link
+	dd	name_divMOD ; link
 	db	6,'negate' ; name
 	.align	4
 NEGATE:
