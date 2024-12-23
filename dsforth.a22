@@ -48,5 +48,8 @@ arm7_start:
 arm7_end:
 org (arm7_end - arm7_start + arm7_src) ; move origin back to ROM space
 
+	.align	0x200
+vdisk_offset:
+
 rom_end:
 .end
