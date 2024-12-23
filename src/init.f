@@ -105,9 +105,9 @@ $0EFF0000 palette-b $200 + ! ( cursor )
   compile (for) here @ ;
 
 : (next)
-  rsp@ cell + dup @ dup
+  rsp@ cell + dup @ dup ( i-addr i i )
   if 1 - swap ! r> dup @ + >r
-  else drop r> rdrop cell + >r then ;
+  else drop drop r> rdrop cell + >r then ;
 
 : next immediate ( -- )
   compile (next) here @ - , ;
