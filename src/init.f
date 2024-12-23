@@ -182,6 +182,16 @@ cell 1 - invert constant cellmask
 : dump ( addr len -- end-addr )
   for dup (dump1) 1 + next ;
 
+( Timer )
+
+$840000 $0400010C ! ( start timer 3 with count-up timing )
+$830000 $04000108 ! ( start timer 2 with prescaler f/1024 )
+
+( precision: 32,768.5 / second )
+( will overflow after 36.5 hours )
+: uptime ( -- time )
+  $0400010C h@ 16 lshift $04000108 h@ or ; 
+
 ( DLDI )
 
 : dldi-init ( -- status )
