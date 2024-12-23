@@ -42,13 +42,16 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : [compile] immediate
   word find >cfa call, ;
 
+: compile immediate
+  [compile] ' ' call, call, ;
+
 : (does>) ( branch-addr -- )
   latest @ >cfa cell + swap over - 'call swap ! ;
 
 ( word should be defined by 'define' instead of 'create' )
 : does> immediate
-  here @ 3 cells + lit, ' (does>) call, ' exit call,
-  docol , ' r> call, ;
+  here @ 3 cells + lit, compile (does>) compile exit
+  docol , compile r> ;
 
 ( adds default behavior which can be replaced by 'does>' )
 : define
@@ -68,13 +71,13 @@ $0EFF0000 palette-b $200 + ! ( cursor )
   cell - 6 lshift 8 rshift $EA000000 or ;
 
 : if immediate ( cond -- )
-  ' 0branch call, here @ 0 , ;
+  compile 0branch here @ 0 , ;
 
 : then immediate
   dup here @ swap - swap ! ;
 
 : else immediate ( TODO: use 'branch single instruction? )
-  ' branch call, here @ 0 , swap [compile] then ;
+  compile branch here @ 0 , swap [compile] then ;
 
 ( new definition which supports interpret mode )
 : ' immediate ( -- )
@@ -84,16 +87,16 @@ $0EFF0000 palette-b $200 + ! ( cursor )
   here @ ;
 
 : until immediate
-  ' 0branch call, here @ - , ;
+  compile 0branch here @ - , ;
 
 : while immediate ( cond -- )
   [compile] if ;
 
 : repeat immediate
-  ' branch call, swap here @ - , [compile] then ;
+  compile branch swap here @ - , [compile] then ;
 
 : again immediate
-  ' branch call, here @ - , ;
+  compile branch here @ - , ;
 
 : is ( cfa -- )
   word find >cfa swap over - cell - 'branch swap ! ;
@@ -110,8 +113,28 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : space ( -- )
   32 emit ;
 
-: ." ( -- ) ( TODO: make immediate! )
-  begin key dup [char] " = if drop exit then emit again ;
+: c, ( byte -- )
+  here @ swap over c! 1 + here ! ;
+
+: align ( size -- )
+  dup dup here @ + 1 - swap mod - 1 - here @ + here ! ;
+
+cell 1 - invert constant cellmask
+
+( warning: does not null terminate, does not align! )
+: " ( -- size )
+  begin key dup [char] " = if drop exit then c, again ;
+
+: (.")
+  r> begin dup c@ dup while emit 1 + repeat drop
+  cell + cellmask and >r ;
+
+: ." immediate ( -- )
+  state @ if
+    compile (.") [compile] " 0 c, cell align
+  else
+    begin key dup [char] " = if drop exit then emit again
+  then ;
 
 : hexchar ( value -- char )
   dup 9 > if [ char A 10 - lit, ] else [char] 0 then + ;
