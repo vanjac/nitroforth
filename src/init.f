@@ -98,6 +98,26 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : again immediate
   compile branch here @ - , ;
 
+: (for) ( start -- )
+  1 - r> swap >r >r ;
+
+: for immediate ( start -- )
+  compile (for) here @ ;
+
+: (next)
+  rsp@ cell + dup @ dup
+  if 1 - swap ! r> dup @ + >r
+  else drop r> rdrop cell + >r then ;
+
+: next immediate ( -- )
+  compile (next) here @ - , ;
+
+: i ( -- i )
+  rsp@ cell + @ ;
+
+: j ( -- j )
+  rsp@ [ 2 cells lit, ] + @ ;
+
 : is ( cfa -- )
   word find >cfa swap over - cell - 'branch swap ! ;
 

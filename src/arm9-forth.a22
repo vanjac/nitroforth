@@ -401,13 +401,22 @@ name_DSPfetch:
 	db	4,'dsp@' ; name
 	.align	4
 DSPfetch:
-	stmfd	[r8], r9
+	str	r9, [r8, -4]
 	mov	r9, r8
 	sub	r8, r8, 4
 	bx	lr
 
-name_Rpush:
+name_RSPfetch:
 	dd	name_DSPfetch ; link
+	db	4,'rsp@' ; name
+	.align	4
+RSPfetch:
+	stmfd	[r8]!, r9
+	mov	r9, sp
+	bx	lr
+
+name_Rpush:
+	dd	name_RSPfetch ; link
 	db	2,'>r' ; name
 	.align	4
 Rpush:
@@ -424,9 +433,26 @@ Rpop:
 	pop	r9
 	bx	lr
 
+name_Rfetch:
+	dd	name_Rpop ; link
+	db	2,'r@' ; name
+	.align	4
+Rfetch:
+	stmfd	[r8]!, r9
+	ldr	r9, [sp]
+	bx	lr
+
+name_RDROP:
+	dd	name_Rfetch ; link
+	db	5,'rdrop' ; name
+	.align	4
+RDROP:
+	add	sp, sp, 4
+	bx	lr
+
 ; ( -- char )
 name_KEY:
-	dd	name_Rpop ; link
+	dd	name_RDROP ; link
 	db	3,'key' ; name
 	.align	4
 KEY:
