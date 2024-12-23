@@ -136,6 +136,9 @@ cell 1 - invert constant cellmask
     begin key dup [char] " = if drop exit then emit again
   then ;
 
+: abort" immediate ( -- )
+  [compile] ." compile quit ;
+
 : hexchar ( value -- char )
   dup 9 > if [ char A 10 - lit, ] else [char] 0 then + ;
 

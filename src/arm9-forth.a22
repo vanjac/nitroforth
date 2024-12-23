@@ -969,9 +969,6 @@ INTERPRET:
 	bl	LIT
 		dd	'?'
 	bl	EMIT
-	bl	LIT
-		dd	10 ; newline
-	bl	EMIT
 	b	QUIT
 
 @@interp_end:
@@ -995,17 +992,17 @@ INTERPRET:
 
 @@data_underflow:
 	bl	f_print_string_inline
-		db	10,'!! Data Underflow !!',10,0
+		db	10,'!! Data Underflow !!',0
 		.align	4
 	b	QUIT
 @@return_underflow:
 	bl	f_print_string_inline
-		db	10,'!! Return Underflow !!',10,0
+		db	10,'!! Return Underflow !!',0
 		.align	4
 	b	QUIT
 @@return_not_empty:
 	bl	f_print_string_inline
-		db	10,'!! Return Not Empty !!',10,0
+		db	10,'!! Return Not Empty !!',0
 		.align	4
 	b	QUIT
 
@@ -1025,15 +1022,17 @@ quit_with_input:
 	push	r0
 
 @@interp_loop:
+	mov	r0, 10 ; newline
+	bl	f_print_char
 	bl	INTERPRET
 	bl	f_print_string_inline
-		db	' ok',10,0
+		db	' ok',0
 		.align	4
 	b	@@interp_loop
 
 @@bad_return:
 	bl	f_print_string_inline
-		db	10,'!! Bad Return !!',10,0
+		db	10,'!! Bad Return !!',0
 		.align	4
 	b	QUIT
 

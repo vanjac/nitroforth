@@ -234,9 +234,6 @@ arm9_debug_handle:
 		.align	4
 	mov	r0, r4
 	bl	f_print_u32_hex
-	bl	f_print_string_inline
-		db	10,0
-		.align	4
 
 	bl	f_setup_debugging
 	bl	f_setup_interrupts
