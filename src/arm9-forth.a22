@@ -3,6 +3,8 @@ word_length_bits = 5
 word_hidden_flag = 0x20
 word_immediate_flag = 0x80
 
+docol = 0xE92D4000 ; 'push lr' instruction
+
 ; dsForth is subroutine-threaded
 
 ; r0:	Scratch
@@ -22,6 +24,11 @@ word_immediate_flag = 0x80
 ; r14:	Link Register
 ; r15:	Program Counter
 
+scratch_area:
+	defs	512
+
+var_scratch_start:
+	dd	scratch_area
 var_data_stack_top:
 	dd	(dtcm_loc + 0x2000)
 var_return_stack_top:
@@ -354,27 +361,21 @@ Cfetch:
 	ldrb	r9, [r9]
 	bx	lr
 
-name_STATE:
-	dd	name_Cfetch ; link
-	db	5,'state' ; name
-	.align	4
-STATE:
-	stmfd	[r8]!, r9
-	add	r9, =var_STATE
-	bx	lr
-var_STATE:
-	dd	0
-
+; TODO: add indirection?
 name_HERE:
-	dd	name_STATE ; link
+	dd	name_Cfetch ; link
 	db	4,'here' ; name
 	.align	4
 HERE:
 	stmfd	[r8]!, r9
-	add	r9, =var_HERE
+	ldr	r9, [var_hereref]
 	bx	lr
-var_HERE:
+var_hereref:
+	dd	var_scratch
+var_data:
 	dd	arm9_end
+var_scratch:
+	dd	scratch_area
 
 name_LATEST:
 	dd	name_HERE ; link
@@ -707,11 +708,12 @@ name_CREATE:
 	db	6,'create' ; name
 	.align	4
 CREATE:
-	push	r4
+	push	r4-r5
 	mov	r0, r9 ; length
 	ldmfd	[r8]!, r1,r9 ; str
 
-	ldr	r2, [var_HERE]
+	ldr	r5, [var_hereref]
+	ldr	r2, [r5] ; here
 	ldr	r3, [var_LATEST]
 	str	r2, [var_LATEST] ; update latest
 
@@ -729,9 +731,9 @@ CREATE:
 	add	r2, r2, r4
 	add	r2, r2, 3 ; padding
 	bic	r2, r2, 0x3 ; align
-	str	r2, [var_HERE]
+	str	r2, [r5] ; here
 
-	pop	r4
+	pop	r4-r5
 	bx	lr
 
 ; ( data -- )
@@ -740,28 +742,11 @@ name_comma:
 	db	1,',' ; name
 	.align	4
 comma:
-	ldr	r0, [var_HERE]
+	ldr	r1, [var_hereref]
+	ldr	r0, [r1]
 	stmia	[r0]!, r9
-	str	r0, [var_HERE]
+	str	r0, [r1]
 	ldmfd	[r8]!, r9
-	bx	lr
-
-name_lbrac:
-	dd	name_comma ; link
-	db	(1 or word_immediate_flag),'[' ; name
-	.align	4
-lbrac:
-	mov	r0, 0
-	str	r0, [var_STATE]
-	bx	lr
-
-name_rbrac:
-	dd	name_lbrac ; link
-	db	1,']' ; name
-	.align	4
-rbrac:
-	mov	r0, 1
-	str	r0, [var_STATE]
 	bx	lr
 
 ; ( addr -- )
@@ -776,34 +761,9 @@ HIDDEN:
 	ldmfd	[r8]!, r9
 	bx	lr
 
-name_colon:
-	dd	name_HIDDEN ; link
-	db	(1 or word_immediate_flag),':' ; name
-	.align	4
-colon:
-	push	lr
-	ldr	r0, [var_STATE]
-	cmp	r0, 1
-	beq	@@fail
-	bl	WORD
-	bl	CREATE
-	bl	LIT
-		dd	0xE92D4000 ; 'push lr' instruction
-	bl	COMMA
-	bl	LATEST
-	bl	fetch
-	bl	HIDDEN
-	bl	rbrac
-	bl	EXIT
-@@fail:
-	bl	f_print_string_inline
-		db	"Missing semicolon?",0
-		.align	4
-	b	QUIT ; abort
-
 ; ( -- )
 name_BRANCH:
-	dd	name_colon ; link
+	dd	name_HIDDEN ; link
 	db	6,'branch' ; name
 	.align	4
 BRANCH:
@@ -844,15 +804,16 @@ name_CALLcomma:
 	db	5,'call,' ; name
 	.align	4
 CALLcomma:
-	push	r4,lr
-	ldr	r4, [var_HERE]
+	push	r4-r5,lr
+	ldr	r5, [var_hereref]
+	ldr	r4, [r5] ; here
 	sub	r9, r9, r4
 	sub	r9, r9, 4
 	bl	qCALL
 	stmia	[r4]!, r9
-	str	r4, [var_HERE]
+	str	r4, [r5] ; here
 	ldmfd	[r8]!, r9
-	pop	r4,lr
+	pop	r4-r5,lr
 	bx	lr
 
 ; add a LIT instruction
@@ -871,8 +832,53 @@ LITcomma:
 	pop	lr
 	bx	lr
 
-name_semicolon:
+name_lbrac:
+	dd	name_comma ; link
+	db	(1 or word_immediate_flag),'[' ; name
+	.align	4
+lbrac:
+	ldr	r0, [var_scratch_start]
+	ldr	r1, =docol
+	stmia	[r0]!, r1
+	ldr	r1, =var_scratch
+	str	r0, [r1]
+	str	r1, [var_hereref]
+	bx	lr
+
+name_rbrac:
+	dd	name_lbrac ; link
+	db	(1 or word_immediate_flag),']' ; name
+	.align	4
+rbrac:
+	push	lr
+	bl	LIT
+		dd	EXIT
+	bl	CALLcomma
+	ldr	r0, =var_data
+	str	r0, [var_hereref]
+	ldr	r0, [var_scratch_start]
+	pop	lr
+	bx	r0
+
+name_colon:
 	dd	name_LITcomma ; link
+	db	(1 or word_immediate_flag),':' ; name
+	.align	4
+colon:
+	push	lr
+	bl	rbrac
+	bl	WORD
+	bl	CREATE
+	bl	LIT
+		dd	docol
+	bl	COMMA
+	bl	LATEST
+	bl	fetch
+	bl	HIDDEN
+	bl	EXIT
+
+name_semicolon:
+	dd	name_colon ; link
 	db	(1 or word_immediate_flag),';' ; name
 	.align	4
 semicolon:
@@ -953,6 +959,8 @@ name_INTERPRET:
 INTERPRET:
 	push	lr
 
+	bl	lbrac
+
 @@interp_loop:
 	bl	WORD
 	bl	OVER ; word ptr
@@ -969,9 +977,6 @@ INTERPRET:
 	pop	r0
 	tst	r0, word_immediate_flag
 	bne	@@execute
-	ldr	r0, [var_STATE]
-	cmp	r0, 0
-	beq	@@execute
 
 	; compile word
 	bl	CALLcomma
@@ -994,10 +999,6 @@ INTERPRET:
 	bl	NIP ; word ptr
 	bl	NIP ; word len
 
-	ldr	r0, [var_STATE]
-	cmp	r0, 0
-	beq	@@interp_end
-
 	; compile literal
 	bl	LITcomma
 	b	@@interp_end
@@ -1017,6 +1018,13 @@ INTERPRET:
 	ldr	r1, [buftop]
 	cmp	r0, r1
 	blo	@@interp_loop
+
+	ldr	r0, [var_hereref]
+	ldr	r1, =var_scratch
+	cmp	r0, r1
+	bne	@@interp_loop ; not in immediate mode
+
+	bl	rbrac ; execute
 
 	; check for errors
 	ldr	r0, [var_data_stack_top]

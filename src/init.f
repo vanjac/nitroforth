@@ -41,32 +41,38 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : ' immediate ( -- )
   word find >cfa lit, ;
 
-: [compile] immediate
+( compile an immediate word )
+: \ immediate
   word find >cfa call, ;
 
 : compile immediate
-  [compile] ' ' call, call, ;
+  \ ' ' call, call, ;
+
+: go immediate
+  \ ] \ [ ;
 
 : (does>) ( branch-addr -- )
-  latest @ >cfa cell + swap over - 'call swap ! ;
+  \ [ latest @ >cfa cell + swap over - 'call swap ! ;
 
 ( word should be defined by 'define' instead of 'create' )
 : does> immediate
   here @ 3 cells + lit, compile (does>) compile exit
   docol , compile r> ;
 
-( adds default behavior which can be replaced by 'does>' )
 : define
-  word create docol , 0 , does> ;
+  \ ] word create docol , 0 , ;
+
+: reserve immediate
+  define does> ;
 
 : allot ( size -- )
   here @ + here ! ;
 
-: constant ( value -- )
+: constant immediate ( value -- )
   define , does> @ ;
 
-: variable ( -- )
-  define 0 , ;
+: variable immediate ( -- )
+  define 0 , does> ;
 
 ( assemble a branch instruction )
 : 'branch ( offset -- instruction )
@@ -79,11 +85,7 @@ $0EFF0000 palette-b $200 + ! ( cursor )
   dup here @ swap - swap ! ;
 
 : else immediate ( TODO: use 'branch single instruction? )
-  compile branch here @ 0 , swap [compile] then ;
-
-( new definition which supports interpret mode )
-: ' immediate ( -- )
-  word find >cfa state @ if lit, then ;
+  compile branch here @ 0 , swap \ then ;
 
 : begin immediate
   here @ ;
@@ -92,10 +94,10 @@ $0EFF0000 palette-b $200 + ! ( cursor )
   compile 0branch here @ - , ;
 
 : while immediate ( cond -- )
-  [compile] if ;
+  \ if ;
 
 : repeat immediate
-  compile branch swap here @ - , [compile] then ;
+  compile branch swap here @ - , \ then ;
 
 : again immediate
   compile branch here @ - , ;
@@ -120,14 +122,11 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : j ( -- j )
   rsp@ [ 2 cells lit, ] + @ ;
 
-: is ( cfa -- )
-  word find >cfa swap over - cell - 'branch swap ! ;
+: is immediate ( cfa -- )
+  \ go word find >cfa swap over - cell - 'branch swap ! ;
 
-: char ( -- c )
-  word drop c@ ;
-
-: [char] immediate
-  char lit, ;
+: char immediate ( -- c )
+  word drop c@ lit, ;
 
 : cr ( -- )
   10 emit ;
@@ -145,24 +144,20 @@ cell 1 - invert constant cellmask
 
 ( warning: does not null terminate, does not align! )
 : " ( -- size )
-  begin key dup [char] " = if drop exit then c, again ;
+  begin key dup char " = if drop exit then c, again ;
 
 : (.")
   r> begin dup c@ dup while emit 1 + repeat drop
   cell + cellmask and >r ;
 
 : ." immediate ( -- )
-  state @ if
-    compile (.") [compile] " 0 c, cell align
-  else
-    begin key dup [char] " = if drop exit then emit again
-  then ;
+  compile (.") \ " 0 c, cell align ;
 
 : abort" immediate ( -- )
-  [compile] ." compile quit ;
+  \ ." compile quit ;
 
 : hexchar ( value -- char )
-  dup 9 > if [ char A 10 - lit, ] else [char] 0 then + ;
+  dup 9 > if [ char A 10 - lit, ] else char 0 then + ;
 
 : $. ( value -- )
   8 for dup 28 rshift hexchar emit 4 lshift next drop space ;
@@ -222,3 +217,5 @@ $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 $.s
 
 cr ." hi :3" cr
+
+go ( TODO: work around bug in parsing words )
