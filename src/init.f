@@ -78,6 +78,9 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : 'branch ( offset -- instruction )
   cell - 6 lshift 8 rshift $EA000000 or ;
 
+: recurse immediate
+  latest @ >cfa call, ;
+
 : if immediate ( cond -- )
   compile 0branch here @ 0 , ;
 
@@ -165,11 +168,21 @@ cell 1 - invert constant cellmask
 : $c. ( value -- )
   $FF and dup 4 rshift hexchar emit $F and hexchar emit ;
 
+( TODO: use u/mod )
+: u. ( value -- )
+  10 /mod dup if recurse else drop then char 0 + emit ;
+
+: u.
+  u. space ;
+
+: . ( value -- )
+  dup 0 < if char - emit negate then u. ;
+
 ( debugging tools )
 
-: $.s ( -- )
+: .s ( -- )
   s0 @ cell - dsp@ ( top cur )
-  begin over over > while dup @ $. cell + repeat drop drop ;
+  begin over over > while dup @ . cell + repeat drop drop ;
 
 : (dump1) ( addr -- )
   dup $7 and 0= if dup $. else space then c@ $c. ;
@@ -214,6 +227,6 @@ $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 
 ( welcome )
 
-$.s
+.s
 
 cr ." hi :3" cr
