@@ -36,7 +36,22 @@ var_return_stack_top:
 
 start_forth:
 	str	sp, [var_return_stack_top] ; Store the return stack top
-	b	quit_with_input
+	bl	f_init_forth_env
+	bl	INTERPRET ; read boot code
+	b	QUIT
+
+f_init_forth_env:
+	ldr	r8, [var_data_stack_top]   ; Set data stack
+	ldr	r9, =0xDEADBEEF
+	mov	r10, 0x04000000
+	add	r0, =@@bad_return
+	push	r0
+	bx	lr
+@@bad_return:
+	bl	f_print_string_inline
+		db	10,'!! Bad Return !!',0
+		.align	4
+	b	QUIT ; abort
 
 ; Dictionary:
 
@@ -361,7 +376,6 @@ Cfetch:
 	ldrb	r9, [r9]
 	bx	lr
 
-; TODO: add indirection?
 name_HERE:
 	dd	name_Cfetch ; link
 	db	4,'here' ; name
@@ -554,10 +568,38 @@ WORD:
 @@word_buf:
 	defs	32
 
+; ( -- available? )
+name_WORDquestion:
+	dd	name_WORD ; link
+	db	5,'word?' ; name
+	.align	4
+WORDquestion:
+	stmfd	[r8]!, r9
+	ldr	r0, [curkey]
+	ldr	r1, [buftop]
+@@loop:
+	cmp	r0, r1
+	bhs	@@no_word
+	ldrb	r2, [r0]
+	add	r0, r0, 1
+	cmp	r2, ' '
+	bls	@@loop ; whitespace
+
+	; found word
+	sub	r0, r0, 2
+	mvn	r9, 0
+	b	@@end
+
+@@no_word:
+	mov	r9, 0
+@@end:
+	str	r0, [curkey]
+	bx	lr
+
 ; print a string
 ; ( addr len -- )
 name_TYPE:
-	dd	name_WORD ; link
+	dd	name_WORDquestion ; link
 	db	4,'type' ; name
 	.align	4
 TYPE:
@@ -1014,10 +1056,10 @@ INTERPRET:
 	b	QUIT ; abort
 
 @@interp_end:
-	ldr	r0, [curkey] ; TODO: add a 'key?' word
-	ldr	r1, [buftop]
-	cmp	r0, r1
-	blo	@@interp_loop
+	bl	WORDquestion
+	cmp	r9, 0
+	bl	DROP
+	bne	@@interp_loop ; still words available
 
 	ldr	r0, [var_hereref]
 	ldr	r1, =var_scratch
@@ -1062,13 +1104,8 @@ name_QUIT:
 QUIT:
 	ldr	r0, [buftop]
 	str	r0, [curkey]
-quit_with_input:
-	ldr	r8, [var_data_stack_top]   ; Set data stack
-	ldr	r9, =0xDEADBEEF
-	mov	r10, 0x04000000
-	ldr	sp, [var_return_stack_top] ; Set return stack
-	add	r0, =@@bad_return
-	push	r0
+	ldr	sp, [var_return_stack_top] ; Reset return stack
+	bl	f_init_forth_env
 
 @@interp_loop:
 	mov	r0, 10 ; newline
@@ -1078,12 +1115,6 @@ quit_with_input:
 		db	' ok',0
 		.align	4
 	b	@@interp_loop
-
-@@bad_return:
-	bl	f_print_string_inline
-		db	10,'!! Bad Return !!',0
-		.align	4
-	b	QUIT ; abort
 
 name_comment:
 	dd	name_QUIT ; link

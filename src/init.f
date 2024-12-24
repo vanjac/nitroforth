@@ -217,5 +217,3 @@ $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 $.s
 
 cr ." hi :3" cr
-
-go ( TODO: work around bug in parsing words )
