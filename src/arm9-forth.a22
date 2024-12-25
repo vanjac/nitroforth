@@ -465,9 +465,31 @@ RDROP:
 	add	sp, sp, 4
 	bx	lr
 
+name_CURKEY:
+	dd	name_RDROP ; link
+	db	6,'curkey' ; name
+	.align	4
+CURKEY:
+	stmfd	[r8]!, r9
+	add	r9, =var_curkey
+	bx	lr
+var_curkey:
+	dd	input_buffer
+
+name_BUFTOP:
+	dd	name_CURKEY ; link
+	db	6,'buftop' ; name
+	.align	4
+BUFTOP:
+	stmfd	[r8]!, r9
+	add	r9, =var_buftop
+	bx	lr
+var_buftop:
+	dd	init_end
+
 ; ( -- char )
 name_KEY:
-	dd	name_RDROP ; link
+	dd	name_BUFTOP ; link
 	db	3,'key' ; name
 	.align	4
 KEY:
@@ -480,15 +502,15 @@ KEY:
 
 f_key:
 	push	r4-r6,lr
-	ldr	r5, [curkey]
-	ldr	r1, [buftop]
+	ldr	r5, [var_curkey]
+	ldr	r1, [var_buftop]
 	cmp	r5, r1
 	bhs	@@get_more_input
 
 @@get_buffered_input:
 	ldrb	r0, [r5]
 	add	r5, r5, 1
-	str	r5, [curkey]
+	str	r5, [var_curkey]
 
 	pop	r4-r6,lr
 	bx	lr
@@ -510,7 +532,7 @@ f_key:
 	cmp	r4, 10 ; newline
 	bne	@@lineread_loop
 
-	str	r6, [buftop]
+	str	r6, [var_buftop]
 	b	@@get_buffered_input
 
 @@backspace:
@@ -518,11 +540,6 @@ f_key:
 	bls	@@lineread_loop ; can't backspace
 	sub	r6, r6, 1
 	b	@@print_char
-
-curkey:
-	dd	input_buffer
-buftop:
-	dd	init_end
 
 ; ( char -- )
 name_EMIT:
@@ -575,8 +592,8 @@ name_WORDquestion:
 	.align	4
 WORDquestion:
 	stmfd	[r8]!, r9
-	ldr	r0, [curkey]
-	ldr	r1, [buftop]
+	ldr	r0, [var_curkey]
+	ldr	r1, [var_buftop]
 @@loop:
 	cmp	r0, r1
 	bhs	@@no_word
@@ -593,7 +610,7 @@ WORDquestion:
 @@no_word:
 	mov	r9, 0
 @@end:
-	str	r0, [curkey]
+	str	r0, [var_curkey]
 	bx	lr
 
 ; print a string
@@ -874,6 +891,7 @@ LITcomma:
 	pop	lr
 	bx	lr
 
+; TODO: make separate words to change hereref
 name_lbrac:
 	dd	name_comma ; link
 	db	(1 or word_immediate_flag),'[' ; name
@@ -1073,11 +1091,9 @@ INTERPRET:
 	cmp	r8, r0
 	bhi	@@data_underflow
 	ldr	r0, [var_return_stack_top]
-	sub	r0, 8 ; stack should be two words deep here
+	sub	r0, 8 ; stack should be at least two words deep
 	cmp	sp, r0
 	bhi	@@return_underflow
-	cmp	sp, r0
-	blo	@@return_not_empty
 
 	bl	EXIT
 
@@ -1091,19 +1107,14 @@ INTERPRET:
 		db	10,'!! Return Underflow !!',0
 		.align	4
 	b	QUIT ; abort
-@@return_not_empty:
-	bl	f_print_string_inline
-		db	10,'!! Return Not Empty !!',0
-		.align	4
-	b	QUIT ; abort
 
 name_QUIT:
 	dd	name_INTERPRET ; link
 	db	4,'quit' ; name
 	.align	4
 QUIT:
-	ldr	r0, [buftop]
-	str	r0, [curkey]
+	ldr	r0, [var_buftop]
+	str	r0, [var_curkey] ; clear input buffer
 	ldr	sp, [var_return_stack_top] ; Reset return stack
 	bl	f_init_forth_env
 
@@ -1111,10 +1122,22 @@ QUIT:
 	mov	r0, 10 ; newline
 	bl	f_print_char
 	bl	INTERPRET
+
+	ldr	r0, [var_return_stack_top]
+	sub	r0, 4 ; stack should be one word deep
+	cmp	sp, r0
+	blo	@@return_not_empty
+
 	bl	f_print_string_inline
 		db	' ok',0
 		.align	4
 	b	@@interp_loop
+
+@@return_not_empty:
+	bl	f_print_string_inline
+		db	10,'!! Return Not Empty !!',0
+		.align	4
+	b	QUIT ; abort
 
 name_comment:
 	dd	name_QUIT ; link

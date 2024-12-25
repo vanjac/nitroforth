@@ -128,6 +128,8 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : is immediate ( cfa -- )
   \ go word find >cfa swap over - cell - 'branch swap ! ;
 
+( terminal output )
+
 : char immediate ( -- c )
   word drop c@ lit, ;
 
@@ -145,16 +147,19 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 
 cell 1 - invert constant cellmask
 
-( warning: does not null terminate, does not align! )
-: " ( -- size )
+: readstr, ( -- )
   begin key dup char " = if drop exit then c, again ;
+
+( warning: does not null terminate, does not align! )
+: " immediate
+  \ ] readstr, \ [ ;
 
 : (.")
   r> begin dup c@ dup while emit 1 + repeat drop
   cell + cellmask and >r ;
 
 : ." immediate ( -- )
-  compile (.") \ " 0 c, cell align ;
+  compile (.") readstr, 0 c, cell align ;
 
 : abort" immediate ( -- )
   \ ." compile quit ;
@@ -177,6 +182,11 @@ cell 1 - invert constant cellmask
 
 : . ( value -- )
   dup 0 < if char - emit negate then u. ;
+
+( development tools )
+
+: eval ( addr len -- )
+  over + buftop ! curkey ! interpret ."  done" quit ;
 
 ( debugging tools )
 
