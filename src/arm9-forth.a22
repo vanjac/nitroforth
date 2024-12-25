@@ -24,9 +24,6 @@ docol = 0xE92D4000 ; 'push lr' instruction
 ; r14:	Link Register
 ; r15:	Program Counter
 
-scratch_area:
-	defs	512
-
 var_scratch_start:
 	dd	scratch_area
 var_data_stack_top:

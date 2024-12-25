@@ -65,6 +65,7 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : reserve immediate
   define does> ;
 
+( TODO: zero fill? )
 : allot ( size -- )
   here @ + here ! ;
 
@@ -142,6 +143,7 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 : c, ( byte -- )
   here @ swap over c! 1 + here ! ;
 
+( TODO: zero fill? )
 : align ( size -- )
   dup dup here @ + 1 - swap mod - 1 - here @ + here ! ;
 

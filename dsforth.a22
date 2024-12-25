@@ -15,7 +15,12 @@ org 0
 arm9_src:
 org arm9_dest
 arm9_start:
-	defs	0x800 ; secure area key1
+
+	; Secure area key1
+	; This will be filled with 0xE7FFDEFF (undefined opcode)
+scratch_area:
+	; TODO: also put the input buffer here?
+	defs	0x800
 
 .include src\arm9-kernel.a22
 .include src\arm9-termout.a22
