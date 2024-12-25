@@ -522,6 +522,8 @@ f_key:
 	bl	f_await_keypress
 	cmp	r0, 8 ; backspace
 	beq	@@backspace
+	cmp	r0, 27 ; escape
+	beq	@@escape
 	; add character
 	strb	r0, [r6]
 	add	r6, r6, 1
@@ -540,6 +542,14 @@ f_key:
 	bls	@@lineread_loop ; can't backspace
 	sub	r6, r6, 1
 	b	@@print_char
+
+@@escape:
+	cmp	r6, r5
+	bls	@@lineread_loop ; reached start of line
+	sub	r6, r6, 1
+	mov	r0, 8 ; backspace
+	bl	f_print_char
+	b	@@escape
 
 ; ( char -- )
 name_EMIT:

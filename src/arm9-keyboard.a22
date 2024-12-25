@@ -80,10 +80,15 @@ f_await_keypress:
 	moveq	r0, 10 ; newline
 	beq	@@exit
 	mov	r1, 0x10000000
-	add	r1, 0x11 ; Y
-	cmp	r0, r1
+	add	r2, r1, 0x11 ; Y
+	cmp	r0, r2
 	moveq	r0, 8 ; backspace
 	beq	@@exit
+	add	r2, r1, 0x10 ; X
+	cmp	r0, r2
+	moveq	r0, 27 ; escape
+	beq	@@exit
+	
 
 	mov	r1, r0, LSR#28 ; command
 	cmp	r1, 0 ; pen down command
