@@ -22,9 +22,9 @@ $0EFF0000 palette-b $200 + ! ( cursor )
 
 : cell
   4 ;
-: cells
+: cells ( cells -- bytes )
   cell * ;
-: /cell
+: /cell ( bytes -- cells )
   2 rshift ;
 
 : / ( a b -- a/b )
@@ -234,6 +234,13 @@ $830000 $04000108 ! ( start timer 2 with prescaler f/1024 )
 $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 
 ." DLDI: " dldi $10 + ztype drop cr
+
+( editor )
+
+: sectors ( sectors -- bytes )
+  512 * ;
+
+reserve buf 64 sectors allot
 
 ( welcome )
 
