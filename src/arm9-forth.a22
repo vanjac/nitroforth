@@ -544,12 +544,11 @@ f_key:
 	b	@@print_char
 
 @@escape:
-	cmp	r6, r5
-	bls	@@lineread_loop ; reached start of line
-	sub	r6, r6, 1
-	mov	r0, 8 ; backspace
-	bl	f_print_char
-	b	@@escape
+	bl	f_print_string_inline
+		db	10,' Esc',10,0
+		.align	4
+	mov	r6, r5
+	b	@@lineread_loop
 
 ; ( char -- )
 name_EMIT:

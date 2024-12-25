@@ -121,13 +121,13 @@ f_await_keypress:
 keyboard_ptr:
 	dd	keyboard
 keyboard:
-	db	0,"`1234567890-=",8,8
+	db	27,"`1234567890-=",8,8
 	db	0,0,"qwertyuiop[]\",0
 	db	0,0,"asdfghjkl;'",10,0,0
 	db	14,14,"zxcvbnm,./",0,0,0,0
 keyboard_end:
 keyboard_shifted:
-	db	0,'~!@#$%^&*()_+',8,8
+	db	27,'~!@#$%^&*()_+',8,8
 	db	0,0,'QWERTYUIOP{}|',0
 	db	0,0,'ASDFGHJKL:"',10,0,0
 	db	15,15,'ZXCVBNM<>?',0,0,0,0
