@@ -200,6 +200,13 @@ cell 1 - invert constant cellmask
 : dump ( addr len -- end-addr )
   for dup (dump1) 1 + next ;
 
+: (sdump1) ( addr -- )
+  dup $F and 0= if dup cr $. then c@ dup 10 = if drop 0 then emit ;
+
+: sdump ( addr len -- end-addr )
+  swap dup $F and if dup $. then swap
+  for dup (sdump1) 1 + next ;
+
 ( Timer )
 
 $840000 $0400010C ! ( start timer 3 with count-up timing )
