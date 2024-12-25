@@ -72,6 +72,18 @@ f_await_keypress:
 	cmpne	r0, 0x20000009
 	addeq	r1, =keyboard
 	beq	@@keyboard_shift
+	; Button shortcuts
+	cmp	r0, 0x10000000 ; A
+	moveq	r0, ' '
+	beq	@@exit
+	cmp	r0, 0x10000001 ; B
+	moveq	r0, 10 ; newline
+	beq	@@exit
+	mov	r1, 0x10000000
+	add	r1, 0x11 ; Y
+	cmp	r0, r1
+	moveq	r0, 8 ; backspace
+	beq	@@exit
 
 	mov	r1, r0, LSR#28 ; command
 	cmp	r1, 0 ; pen down command
@@ -88,6 +100,7 @@ f_await_keypress:
 	cmp	r0, 0
 	beq	@@await_loop
 
+@@exit:
 	pop	lr
 	bx	lr
 
