@@ -1004,16 +1004,67 @@ C_CALL2:
 C_CALL1:
 	ldmfd	[r8]!, r0
 C_CALL0:
-	push	r4,lr
-	mov	r4, r9 ; fn pointer
-	blx	r4
+	push	lr
+	blx	r9 ; fn pointer
 	mov	r9, r0
-	pop	r4,lr
+	pop	lr
 	bx	lr
+
+; ( nn -- result )
+name_BIOS0:
+	dd	name_C_CALL4 ; link
+	db	5,'bios0' ; name
+	.align	4
+	b	BIOS0
+
+; ( arg1 nn -- result )
+name_BIOS1:
+	dd	name_BIOS0 ; link
+	db	5,'bios1' ; name
+	.align	4
+	b	BIOS1
+
+; ( arg1 arg2 nn -- result )
+name_BIOS2:
+	dd	name_BIOS1 ; link
+	db	5,'bios2' ; name
+	.align	4
+	b	BIOS2
+
+; ( arg1 arg2 arg3 nn -- result )
+name_BIOS3:
+	dd	name_BIOS2 ; link
+	db	5,'bios3' ; name
+	.align	4
+	b	BIOS3
+
+; ( arg1 arg2 arg3 arg4 nn -- result )
+name_BIOS4:
+	dd	name_BIOS3 ; link
+	db	5,'bios4' ; name
+	.align	4
+BIOS4:
+	ldmfd	[r8]!, r3
+BIOS3:
+	ldmfd	[r8]!, r2
+BIOS2:
+	ldmfd	[r8]!, r1
+BIOS1:
+	ldmfd	[r8]!, r0
+BIOS0:
+	; this is self-modifying code!
+	strb	r9, [@@swi_instr + 2] ; comment (upper 8 bits)
+	b	@@swi_instr ; flush prefetch buffer
+	nop
+@@swi_instr:
+	swi	0 ; will be modified before execution
+	mov	r9, r0
+	bx	lr
+
 
 ; loop until input buffer empty
 name_INTERPRET:
-	dd	name_C_CALL4 ; link
+	dd	name_BIOS4 ; link
 	db	9,'interpret' ; name
 	.align	4
 INTERPRET:
