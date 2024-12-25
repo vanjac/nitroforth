@@ -251,6 +251,7 @@ $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 : sectors ( sectors -- bytes )
   512 * ;
 
+$10 align
 reserve buf 64 sectors allot
 
 ( welcome )

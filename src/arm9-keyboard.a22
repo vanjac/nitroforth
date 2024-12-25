@@ -24,20 +24,26 @@ f_render_keyboard:
 ; ---
 ; r0: key
 f_get_key:
+	subs	r2, r1, 0x6C
+	blt	@@pick
 	add	r0, r0, 4
-	subs	r1, r1, 0x6C
-	blt	@@no_key
-	mov	r1, r1, LSR#4
-	cmp	r1, 4
+	mov	r2, r2, LSR#4
+	cmp	r2, 4
 	bge	@@space
-	sub	r0, r0, r1, LSL#3 ; stagger keys
+	sub	r0, r0, r2, LSL#3 ; stagger keys
 	mov	r0, r0, ASR#4
-	add	r0, r1, LSL#4
-	ldr	r1, [keyboard_ptr]
-	ldrb	r0, [r1, r0]
+	add	r0, r2, LSL#4
+	ldr	r2, [keyboard_ptr]
+	ldrb	r0, [r2, r0]
 	bx	lr
-@@no_key:
-	mov	r0, 0
+@@pick:
+	mov	r0, r0, LSR#3
+	mov	r1, r1, LSR#3
+	add	r0, r1, LSL#5
+	ldr	r1, =term_bg_screen
+	add	r1, r1, r0, LSL#1
+	ldrh	r0, [r1]
+	and	r0, r0, 0xFF
 	bx	lr
 @@space:
 	mov	r0, ' '
