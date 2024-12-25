@@ -154,6 +154,10 @@ cell 1 - invert constant cellmask
 : " immediate
   \ ] readstr, \ [ ;
 
+: w" immediate ( addr -- end-addr )
+  \ go
+  begin key dup char " = if drop exit then over c! 1 + again ;
+
 : (.")
   r> begin dup c@ dup while emit 1 + repeat drop
   cell + cellmask and >r ;
