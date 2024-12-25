@@ -254,6 +254,11 @@ $4000204 ( EXMEMCNT ) dup h@ $880 invert and swap h!
 $10 align
 reserve buf 64 sectors allot
 
+: restore
+  dldi-init 0= if abort" DLDI init failed!" then
+  1 64 buf dldi-read 0= if abort" DLDI read failed!" then
+  buf 64 sectors eval ;
+
 ( welcome )
 
 .s
