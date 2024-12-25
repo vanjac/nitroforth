@@ -208,7 +208,8 @@ cell 1 - invert constant cellmask
   dup $F and 0= if dup cr $. then c@ dup 10 = if drop 0 then emit ;
 
 : sdump ( addr len -- end-addr )
-  swap dup $F and if dup $. then swap
+  ."          0123456789ABCDEF"
+  over + swap $F invert and swap over -
   for dup (sdump1) 1 + next ;
 
 ( Timer )
